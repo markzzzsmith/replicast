@@ -17,38 +17,41 @@
 #include "global.h"
 
 
-int open_mc_rx_inet_sock(const struct in_addr mc_group,
+int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
 			 const struct in_addr in_intf_addr);
 
-void close_mc_rx_inet_sock(const int sock_fd);
+void close_inet_rx_mc_sock(const int sock_fd);
 
-int open_mc_rx_inet6_sock(const struct in6_addr mc_group,
+int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 			  const unsigned int port,
 			  const unsigned int in_intf_idx);
 
-void close_mc_rx_inet6_sock(const int sock_fd);
+void close_inet6_rx_mc_sock(const int sock_fd);
 
-int open_mc_tx_inet_sock(const int mc_ttl, const struct in_addr out_intf_addr);
+int open_inet_mc_tx_sock(const int mc_ttl,
+			 const int no_mc_loop,
+			 const struct in_addr out_intf_addr);
 
+void close_inet_tx_mc_sock(int sock_fd);
 
-void close_mc_tx_inet_sock(int sock_fd);
+int open_inet6_tx_mc_sock(const int mc_hops,
+			  const int no_mc_loop,
+			  const unsigned int out_intf_idx);
 
-int open_mc_tx_inet6_sock(int mc_hops, unsigned int out_intf_idx);
+void close_inet6_tx_mc_sock(int sock_fd);
 
-void close_mc_tx_inet6_sock(int sock_fd);
+int inet_tx_mcast(const int sock_fd,
+		  const void *pkt,
+		  const size_t pkt_len,
+ 		  const struct sockaddr_in group_dests[],
+		  const unsigned int group_dests_num);
 
-int tx_mcast_inet(const int sock_fd,
+int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct in_addr group_addrs[],
-		   const unsigned int group_addrs_num);
-
-int tx_mcast_inet6(const int sock_fd,
-		   const void *pkt,
-		   const size_t pkt_len,
- 		   const struct in6_addr group_addrs[],
-		   const unsigned int group_addrs_num);
+ 		   const struct sockaddr_in6 group_dests[],
+		   const unsigned int group_dests_num);
 
 
 int main(int argc, char *argv[])
@@ -62,12 +65,12 @@ int main(int argc, char *argv[])
 	/* IPv6 */
 /*
 	inet_pton(AF_INET6, "ff05::5", &inet6_mcaddr);
-	sock_fd = open_mc_rx_inet6_sock(inet6_mcaddr, 1234, 9); */
+	sock_fd = open_inet6_rx_mc_sock(inet6_mcaddr, 1234, 9); */
 
 	/* IPv4 */
 	inet_pton(AF_INET, "224.4.4.4", &inet_mcaddr);
 	inet_pton(AF_INET, "1.1.1.1", &in_intf_addr);
-	sock_fd = open_mc_rx_inet_sock(inet_mcaddr, 1234, in_intf_addr);
+	sock_fd = open_inet_rx_mc_sock(inet_mcaddr, 1234, in_intf_addr);
 	
 
 	if (sock_fd == -1) {
@@ -77,14 +80,14 @@ int main(int argc, char *argv[])
 	sleep(20);	
 
 	/* IPv4 */
-	close_mc_rx_inet_sock(sock_fd);
+	close_inet_rx_mc_sock(sock_fd);
 
 	return 0;
 
 }
 
 
-int open_mc_rx_inet_sock(const struct in_addr mc_group,
+int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
 			 const struct in_addr in_intf_addr)
 {
@@ -125,7 +128,7 @@ int open_mc_rx_inet_sock(const struct in_addr mc_group,
 }
 
 
-void close_mc_rx_inet_sock(const int sock_fd)
+void close_inet_rx_mc_sock(const int sock_fd)
 {
 
 
@@ -134,7 +137,7 @@ void close_mc_rx_inet_sock(const int sock_fd)
 }
 
 
-int open_mc_rx_inet6_sock(const struct in6_addr mc_group,
+int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 			  const unsigned int port,
 			  const unsigned int in_intf_idx)
 {
@@ -175,7 +178,7 @@ int open_mc_rx_inet6_sock(const struct in6_addr mc_group,
 }
 
 
-void close_mc_rx_inet6_sock(const int sock_fd)
+void close_inet6_rx_mc_sock(const int sock_fd)
 {
 
 
@@ -184,10 +187,13 @@ void close_mc_rx_inet6_sock(const int sock_fd)
 }
 
 
-int open_mc_tx_inet_sock(const int mc_ttl, const struct in_addr out_intf_addr)
+int open_inet_mc_tx_sock(const int mc_ttl,
+			 const int no_mc_loop,
+			 const struct in_addr out_intf_addr)
 {
 	int sock_fd;
 	uint8_t ttl;
+	uint8_t mc_loop;
 	int ret;
 
 
@@ -205,6 +211,15 @@ int open_mc_tx_inet_sock(const int mc_ttl, const struct in_addr out_intf_addr)
 		}
 	}
 
+	if (no_mc_loop == 1) {
+		mc_loop = 0;
+		ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_LOOP,
+			&mc_loop, sizeof(mc_loop));
+		if (ret == -1) {
+			return -1;
+		}
+	}
+
 	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_IF, &out_intf_addr,
 		sizeof(out_intf_addr));
 	if (ret == -1) {
@@ -216,7 +231,7 @@ int open_mc_tx_inet_sock(const int mc_ttl, const struct in_addr out_intf_addr)
 }
 
 
-void close_mc_tx_inet_sock(int sock_fd)
+void close_inet_tx_mc_sock(int sock_fd)
 {
 
 
@@ -225,10 +240,13 @@ void close_mc_tx_inet_sock(int sock_fd)
 }
 
 
-int open_mc_tx_inet6_sock(int mc_hops, unsigned int out_intf_idx)
+int open_inet6_tx_mc_sock(const int mc_hops,
+			  const int no_mc_loop,
+			  const unsigned int out_intf_idx)
 {
 	int sock_fd;
 	uint8_t hops;
+	uint8_t mc_loop;
 	uint16_t out_intf;
 	int ret;
 	
@@ -248,6 +266,15 @@ int open_mc_tx_inet6_sock(int mc_hops, unsigned int out_intf_idx)
 		}
 	}
 
+	if (no_mc_loop == 1) {
+		mc_loop = 0;
+		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+			&mc_loop, sizeof(mc_loop));
+		if (ret == -1) {
+			return -1;
+		}
+	}
+
 	out_intf = out_intf_idx;
 	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_IF, &out_intf,
 		sizeof(out_intf));
@@ -260,7 +287,7 @@ int open_mc_tx_inet6_sock(int mc_hops, unsigned int out_intf_idx)
 }
 
 
-void close_mc_tx_inet6_sock(int sock_fd)
+void close_inet6_tx_mc_sock(int sock_fd)
 {
 
 
@@ -269,21 +296,21 @@ void close_mc_tx_inet6_sock(int sock_fd)
 }
 
 
-int tx_mcast_inet(const int sock_fd,
-		   const void *pkt,
-		   const size_t pkt_len,
- 		   const struct in_addr group_addrs[],
-		   const unsigned int group_addrs_num)
+int inet_tx_mcast(const int sock_fd,
+		  const void *pkt,
+		  const size_t pkt_len,
+ 		  const struct sockaddr_in group_dests[],
+		  const unsigned int group_dests_num)
 {
 	unsigned int i;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
-	for (i = 0; i < group_addrs_num; i++) {
+	for (i = 0; i < group_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
-			(struct sockaddr *)&group_addrs[i],
-			sizeof(struct in_addr));
+			(struct sockaddr *)&group_dests[i],
+			sizeof(struct sockaddr_in));
 		if (ret != -1) {
 			tx_success++;
 		}
@@ -294,21 +321,21 @@ int tx_mcast_inet(const int sock_fd,
 }
 
 
-int tx_mcast_inet6(const int sock_fd,
+int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct in6_addr group_addrs[],
-		   const unsigned int group_addrs_num)
+ 		   const struct sockaddr_in6 group_dests[],
+		   const unsigned int group_dests_num)
 {
 	unsigned int i;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
-	for (i = 0; i < group_addrs_num; i++) {
+	for (i = 0; i < group_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
-			(struct sockaddr *)&group_addrs[i],
-			sizeof(struct in6_addr));
+			(struct sockaddr *)&group_dests[i],
+			sizeof(struct sockaddr_in6));
 		if (ret != -1) {
 			tx_success++;
 		}
