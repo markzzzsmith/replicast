@@ -1,6 +1,6 @@
 /*
- * mcastrep - replicate an incoming multicast stream to multiple destination
- *	      multicast streams
+ * replicast - replicate an incoming multicast stream to multiple destination
+ *	       multicast streams
  *
  */
 
@@ -29,7 +29,7 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 
 void close_inet6_rx_mc_sock(const int sock_fd);
 
-int open_inet_mc_tx_sock(const int mc_ttl,
+int open_inet_tx_mc_sock(const int mc_ttl,
 			 const int no_mc_loop,
 			 const struct in_addr out_intf_addr);
 
@@ -56,31 +56,49 @@ int inet6_tx_mcast(const int sock_fd,
 
 int main(int argc, char *argv[])
 {
-	int sock_fd;
-	struct in6_addr inet6_mcaddr;
+	int in_sock_fd;
+	int out_sock_fd;
+	//struct in6_addr inet6_mcaddr;
 	struct in_addr inet_mcaddr;
 	struct in_addr in_intf_addr;
+	struct in_addr out_intf_addr;
+	struct sockaddr_in inet_out_mcaddr;
+	const unsigned int pkt_buf_size = 0xffff;
+	uint8_t pkt_buf[pkt_buf_size];
+	unsigned int rx_pkt_len;
 
 
 	/* IPv6 */
-/*
-	inet_pton(AF_INET6, "ff05::5", &inet6_mcaddr);
-	sock_fd = open_inet6_rx_mc_sock(inet6_mcaddr, 1234, 9); */
+	//inet_pton(AF_INET6, "ff05::5", &inet6_mcaddr);
+	//in_sock_fd = open_inet6_rx_mc_sock(inet6_mcaddr, 1234, 9); 
 
 	/* IPv4 */
 	inet_pton(AF_INET, "224.4.4.4", &inet_mcaddr);
 	inet_pton(AF_INET, "1.1.1.1", &in_intf_addr);
-	sock_fd = open_inet_rx_mc_sock(inet_mcaddr, 1234, in_intf_addr);
-	
-
-	if (sock_fd == -1) {
+	in_sock_fd = open_inet_rx_mc_sock(inet_mcaddr, 1234, in_intf_addr);
+	if (in_sock_fd == -1) {
 		perror("");
 	}
 
-	sleep(20);	
+	inet_pton(AF_INET, "1.1.1.1", &out_intf_addr);
+	out_sock_fd = open_inet_tx_mc_sock(0, 0, out_intf_addr);
+
+	memset(&inet_out_mcaddr, 0, sizeof(inet_out_mcaddr));
+	inet_out_mcaddr.sin_family = AF_INET;
+	inet_pton(AF_INET, "224.5.5.5", &inet_out_mcaddr.sin_addr);
+	inet_out_mcaddr.sin_port = htons(1234);
+
+	for ( ;; ) {
+		rx_pkt_len = recv(in_sock_fd, pkt_buf, pkt_buf_size, 0);	
+		if (rx_pkt_len > 0) {
+			inet_tx_mcast(out_sock_fd, pkt_buf, rx_pkt_len,
+				&inet_out_mcaddr, 1);
+		}
+	}
 
 	/* IPv4 */
-	close_inet_rx_mc_sock(sock_fd);
+	close_inet_rx_mc_sock(in_sock_fd);
+	close_inet_tx_mc_sock(out_sock_fd);
 
 	return 0;
 
@@ -187,7 +205,7 @@ void close_inet6_rx_mc_sock(const int sock_fd)
 }
 
 
-int open_inet_mc_tx_sock(const int mc_ttl,
+int open_inet_tx_mc_sock(const int mc_ttl,
 			 const int no_mc_loop,
 			 const struct in_addr out_intf_addr)
 {

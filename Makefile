@@ -1,7 +1,7 @@
 
 
-mcastrep : global.h mcastrep.c
-	gcc -Wall -o mcastrep mcastrep.c
+replicast : global.h replicast.c
+	gcc -Wall -o replicast replicast.c
 
 clean :
-	rm -f mcastrep
+	rm -f replicast
