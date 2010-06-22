@@ -29,7 +29,15 @@ struct inet_tx_mc_sock_params {
 	int mc_loop;
 	struct in_addr out_intf_addr;
 	struct sockaddr_in *mc_dests;
-	int mc_dests_num;	
+	unsigned int mc_dests_num;	
+};
+
+struct inet6_tx_mc_sock_params {
+	int mc_hops;
+	int mc_loop;
+	unsigned int out_intf_idx;
+	struct sockaddr_in6 *mc_dests;
+	unsigned int mc_dests_num;
 };
 
 
@@ -44,6 +52,11 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
 			struct inet_tx_mc_sock_params tx_sock_parms);
+
+void inet_to_inet6_mcast(int *inet_in_sock_fd,
+			struct inet_rx_mc_sock_params rx_sock_parms,
+			int *inet6_out_sock_fd,
+			struct inet6_tx_mc_sock_params tx_sock_parms);
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
@@ -175,6 +188,40 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		}
 	}
 
+}
+
+
+void inet_to_inet6_mcast(int *inet_in_sock_fd,
+			struct inet_rx_mc_sock_params rx_sock_parms,
+			int *inet6_out_sock_fd,
+			struct inet6_tx_mc_sock_params tx_sock_parms)
+{
+	uint8_t pkt_buf[PKT_BUF_SIZE];
+	ssize_t rx_pkt_len;
+
+
+	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
+	if (*inet_in_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet6_out_sock_fd = open_inet6_tx_mc_sock(tx_sock_parms.mc_hops,
+		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
+	if (*inet6_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	for ( ;; ) {
+		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		if (rx_pkt_len > 0) {
+			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+				tx_sock_parms.mc_dests,
+				tx_sock_parms.mc_dests_num);
+		} else if (rx_pkt_len == -1) {
+			exit_errno(__func__, __LINE__, errno);
+		}
+	}
 
 }
 
