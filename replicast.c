@@ -18,6 +18,21 @@
 #include "global.h"
 
 
+struct inet_rx_mc_sock_params {
+	struct in_addr mc_group;
+	unsigned int port;
+	struct in_addr in_intf_addr;	
+};
+
+struct inet_tx_mc_sock_params {
+	int mc_ttl;
+	int mc_loop;
+	struct in_addr out_intf_addr;
+	struct sockaddr_in *mc_dests;
+	int mc_dests_num;	
+};
+
+
 enum {
 	PKT_BUF_SIZE = 0xffff,
 };
@@ -26,15 +41,9 @@ enum {
 void close_sockets(void);
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
-			const struct in_addr mc_group,
-			const unsigned int port,
-			const struct in_addr in_intf_addr,
+			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
-			const int mc_ttl,
-			const int mc_loop,
-			const struct in_addr out_intf_addr,
-			const struct sockaddr_in inet_mc_dests[],
-			const unsigned int mc_dests_num);
+			struct inet_tx_mc_sock_params tx_sock_parms);
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
@@ -81,18 +90,20 @@ int inet6_out_sock_fd = -1;
 
 int main(int argc, char *argv[])
 {
-	struct in_addr rx_mcaddr;
-	struct in_addr in_intf_addr;
-	struct in_addr out_intf_addr;
+	struct inet_rx_mc_sock_params rx_sock_parms;
+	struct inet_tx_mc_sock_params tx_sock_parms;
 	struct sockaddr_in inet_mc_dests[3];
 	
 
 	atexit(close_sockets);
 
-	inet_pton(AF_INET, "224.4.4.4", &rx_mcaddr);
-	inet_pton(AF_INET, "1.1.1.1", &in_intf_addr);
+	inet_pton(AF_INET, "224.4.4.4", &rx_sock_parms.mc_group);
+	rx_sock_parms.port = htons(1234);
+	inet_pton(AF_INET, "1.1.1.1", &rx_sock_parms.in_intf_addr);
 
-	inet_pton(AF_INET, "1.1.1.1", &out_intf_addr);
+	tx_sock_parms.mc_ttl = 1;
+	tx_sock_parms.mc_loop = 0;
+	inet_pton(AF_INET, "1.1.1.1", &tx_sock_parms.out_intf_addr);
 
 	memset(&inet_mc_dests[0], 0, sizeof(inet_mc_dests[0]));
 	inet_mc_dests[0].sin_family = AF_INET;
@@ -108,9 +119,12 @@ int main(int argc, char *argv[])
 	inet_mc_dests[2].sin_family = AF_INET;
 	inet_pton(AF_INET, "224.7.7.7", &inet_mc_dests[2].sin_addr);
 	inet_mc_dests[2].sin_port = htons(1234);
+
+	tx_sock_parms.mc_dests = inet_mc_dests;
+	tx_sock_parms.mc_dests_num = 3;
 	
-	inet_to_inet_mcast(&inet_in_sock_fd, rx_mcaddr, 1234, in_intf_addr,
-		&inet_out_sock_fd, 1, 0, out_intf_addr, inet_mc_dests, 3);
+	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
+		tx_sock_parms);
 
 	return 0;
 
@@ -130,27 +144,22 @@ void close_sockets(void)
 
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
-			const struct in_addr mc_group,
-			const unsigned int port,
-			const struct in_addr in_intf_addr,
+			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
-			const int mc_ttl,
-			const int mc_loop,
-			const struct in_addr out_intf_addr,
-			const struct sockaddr_in inet_mc_dests[],
-			const unsigned int mc_dests_num)
+			struct inet_tx_mc_sock_params tx_sock_parms)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
 
 
-	*inet_in_sock_fd = open_inet_rx_mc_sock(mc_group, port, in_intf_addr);
+	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_mc_sock(mc_ttl, mc_loop,
-		out_intf_addr);
+	*inet_out_sock_fd = open_inet_tx_mc_sock(tx_sock_parms.mc_ttl,
+		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -159,7 +168,8 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		if (rx_pkt_len > 0) {
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_mc_dests, mc_dests_num);
+				tx_sock_parms.mc_dests,
+				tx_sock_parms.mc_dests_num);
 		} else if (rx_pkt_len == -1) {
 			exit_errno(__func__, __LINE__, errno);
 		}
