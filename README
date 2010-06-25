@@ -1,7 +1,7 @@
 
 
 
-o  IPv4 Static Routes for Multicast Input and Output Interface Selection
+1. IPv4 Static Routes for Multicast Input and Output Interface Selection
 
 e.g.
 
@@ -11,7 +11,10 @@ e.g.
 	'ip route 224.5.5.5/32 dev eth2'
 
 
-o  IPv6 Static Routes for Multicast Input and Output Interface Selection
+N.B. outbound interface must have an IPv4 address
+
+
+2. IPv6 Static Routes for Multicast Input and Output Interface Selection
 
 
 e.g.
@@ -25,3 +28,13 @@ to view static multicast routes
 	'ip -6 route show table local'
 
 	
+3. Misc Notes
+
+3.1 IPv6 Multicast in VLC
+
+IPv6 multicast addresses need to have interface name specified, as well as
+being enclosed in square brackets e.g.
+
+[ff02::15%eth0]
+
+
