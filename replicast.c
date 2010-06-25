@@ -33,6 +33,12 @@ struct inet_tx_mc_sock_params {
 	unsigned int mc_dests_num;	
 };
 
+struct inet6_rx_mc_sock_params {
+	struct in6_addr mc_group;
+	unsigned int port;
+	unsigned int in_intf_idx;
+};
+
 struct inet6_tx_mc_sock_params {
 	int mc_hops;
 	unsigned int mc_loop;
@@ -66,6 +72,11 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 			      int *inet6_out_sock_fd,
 			      struct inet6_tx_mc_sock_params
 							inet6_tx_sock_parms);
+
+void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+			  struct inet6_rx_mc_sock_params rx_sock_parms,
+			  int *inet6_out_sock_fd,
+			  struct inet6_tx_mc_sock_params tx_sock_parms);
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
@@ -115,6 +126,7 @@ int main(int argc, char *argv[])
 	struct inet_rx_mc_sock_params rx_sock_parms;
 	struct inet_tx_mc_sock_params tx_sock_parms;
 	struct sockaddr_in inet_mc_dests[3];
+	struct inet6_rx_mc_sock_params rx6_sock_parms;
 	struct inet6_tx_mc_sock_params tx6_sock_parms;
 	struct sockaddr_in6 inet6_mc_dests[3];
 	
@@ -156,6 +168,10 @@ int main(int argc, char *argv[])
 		tx_sock_parms);
 */
 
+	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
+	rx6_sock_parms.port = 1234;
+	rx6_sock_parms.in_intf_idx = 0;
+
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;
 	//tx6_sock_parms.out_intf_idx = 2; /* eth0 */
@@ -183,9 +199,15 @@ int main(int argc, char *argv[])
 		&inet6_out_sock_fd, tx6_sock_parms);
 */
 
+/*
 	inet_to_inet_inet6_mcast(&inet_in_sock_fd, rx_sock_parms,
 				 &inet_out_sock_fd, tx_sock_parms,
 				 &inet6_out_sock_fd, tx6_sock_parms);
+
+*/
+
+	inet6_to_inet6_mcast(&inet6_in_sock_fd, rx6_sock_parms,
+			     &inet6_out_sock_fd, tx6_sock_parms);
 
 	return 0;
 
@@ -325,6 +347,43 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 }
 
 
+void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+			  struct inet6_rx_mc_sock_params rx_sock_parms,
+			  int *inet6_out_sock_fd,
+			  struct inet6_tx_mc_sock_params tx_sock_parms)
+{
+	uint8_t pkt_buf[PKT_BUF_SIZE];
+	ssize_t rx_pkt_len;
+
+
+	log_debug("%s() entry\n", __func__);
+
+	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	if (*inet6_in_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet6_out_sock_fd = open_inet6_tx_mc_sock(tx_sock_parms.mc_hops,
+		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
+	if (*inet6_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	for ( ;; ) {
+		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		if (rx_pkt_len > 0) {
+			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+				tx_sock_parms.mc_dests,
+				tx_sock_parms.mc_dests_num);
+		}
+	}
+
+}
+
+
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum)
 {
 
@@ -418,6 +477,8 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	/* socket() */
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
+		log_debug_low("%s(): socket() == %d\n", __func__, sock_fd);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		return -1;
 	}
 
@@ -425,6 +486,9 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	ret = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &one,
 		sizeof(one));
 	if (ret == -1) {
+		log_debug_low("%s(): setsockopt(SO_REUSEADDR) == %d\n",
+			__func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		return -1;
 	}
 
@@ -436,6 +500,8 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_mcaddr,
 		sizeof(sa_in6_mcaddr));
 	if (ret == -1) {
+		log_debug_low("%s(): bind() == %d\n", __func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		return -1;
 	}
 
@@ -445,6 +511,9 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 		&ipv6_mcast_req, sizeof(ipv6_mcast_req));
 	if (ret == -1) {
+		log_debug_low("%s(): setsockopt(IPV6_ADD_MEMBERSHIP) == %d\n",
+			__func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		return -1;
 	}
 
