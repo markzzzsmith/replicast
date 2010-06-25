@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 
 #include "global.h"
+#include "log.h"
 
 
 struct inet_rx_mc_sock_params {
@@ -57,6 +58,14 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet6_out_sock_fd,
 			struct inet6_tx_mc_sock_params tx_sock_parms);
+
+void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+			      struct inet_rx_mc_sock_params rx_sock_parms,
+			      int *inet_out_sock_fd,
+			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			      int *inet6_out_sock_fd,
+			      struct inet6_tx_mc_sock_params
+							inet6_tx_sock_parms);
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
@@ -104,22 +113,25 @@ int inet6_out_sock_fd = -1;
 int main(int argc, char *argv[])
 {
 	struct inet_rx_mc_sock_params rx_sock_parms;
-	//struct inet_tx_mc_sock_params tx_sock_parms;
-	//struct sockaddr_in inet_mc_dests[3];
+	struct inet_tx_mc_sock_params tx_sock_parms;
+	struct sockaddr_in inet_mc_dests[3];
 	struct inet6_tx_mc_sock_params tx6_sock_parms;
 	struct sockaddr_in6 inet6_mc_dests[3];
 	
 
 	atexit(close_sockets);
 
+	log_set_detail_level(LOG_SEV_DEBUG_LOW);
+
 	inet_pton(AF_INET, "224.4.4.4", &rx_sock_parms.mc_group);
 	rx_sock_parms.port = 1234;
-	inet_pton(AF_INET, "1.1.1.1", &rx_sock_parms.in_intf_addr);
+	//inet_pton(AF_INET, "1.1.1.1", &rx_sock_parms.in_intf_addr);
+	rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY; /* use route table */
 
-/*
 	tx_sock_parms.mc_ttl = 1;
-	tx_sock_parms.mc_loop = 0;
-	inet_pton(AF_INET, "1.1.1.1", &tx_sock_parms.out_intf_addr);
+	tx_sock_parms.mc_loop = 1;
+	//inet_pton(AF_INET, "1.1.1.1", &tx_sock_parms.out_intf_addr);
+	tx_sock_parms.out_intf_addr.s_addr = INADDR_ANY; /* use route table */
 
 	memset(&inet_mc_dests[0], 0, sizeof(inet_mc_dests[0]));
 	inet_mc_dests[0].sin_family = AF_INET;
@@ -139,34 +151,41 @@ int main(int argc, char *argv[])
 	tx_sock_parms.mc_dests = inet_mc_dests;
 	tx_sock_parms.mc_dests_num = 3;
 	
+/*
 	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
 		tx_sock_parms);
-
 */
 
 	tx6_sock_parms.mc_hops = 1;
-	tx6_sock_parms.mc_loop = 0;
-	tx6_sock_parms.out_intf_idx = 2; /* eth0 */
+	tx6_sock_parms.mc_loop = 1;
+	//tx6_sock_parms.out_intf_idx = 2; /* eth0 */
+	tx6_sock_parms.out_intf_idx = 0; /* any - looks to match on 'local' route table */
 
 	memset(inet6_mc_dests, 0, sizeof(struct sockaddr_in6) * 3);
 
 	inet6_mc_dests[0].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::1", &inet6_mc_dests[0].sin6_addr);
+	inet_pton(AF_INET6, "ff02::15", &inet6_mc_dests[0].sin6_addr);
 	inet6_mc_dests[0].sin6_port = htons(1234);
 
 	inet6_mc_dests[1].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::2", &inet6_mc_dests[1].sin6_addr);
+	inet_pton(AF_INET6, "ff02::16", &inet6_mc_dests[1].sin6_addr);
 	inet6_mc_dests[1].sin6_port = htons(1234);
 
 	inet6_mc_dests[2].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::3", &inet6_mc_dests[2].sin6_addr);
+	inet_pton(AF_INET6, "ff02::17", &inet6_mc_dests[2].sin6_addr);
 	inet6_mc_dests[2].sin6_port = htons(1234);
 
 	tx6_sock_parms.mc_dests = inet6_mc_dests;
 	tx6_sock_parms.mc_dests_num = 3;
 
+/*
 	inet_to_inet6_mcast(&inet_in_sock_fd, rx_sock_parms,
 		&inet6_out_sock_fd, tx6_sock_parms);
+*/
+
+	inet_to_inet_inet6_mcast(&inet_in_sock_fd, rx_sock_parms,
+				 &inet_out_sock_fd, tx_sock_parms,
+				 &inet6_out_sock_fd, tx6_sock_parms);
 
 	return 0;
 
@@ -194,6 +213,8 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
+	log_debug("%s() entry\n", __func__);
+
 	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
@@ -208,12 +229,12 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		if (rx_pkt_len > 0) {
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
-		} else if (rx_pkt_len == -1) {
-			exit_errno(__func__, __LINE__, errno);
 		}
 	}
 
@@ -229,6 +250,8 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
+	log_debug("%s() entry\n", __func__);
+
 	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
@@ -243,12 +266,59 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		if (rx_pkt_len > 0) {
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
-		} else if (rx_pkt_len == -1) {
-			exit_errno(__func__, __LINE__, errno);
+		}
+	}
+
+}
+
+
+void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+			      struct inet_rx_mc_sock_params rx_sock_parms,
+			      int *inet_out_sock_fd,
+			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			      int *inet6_out_sock_fd,
+			      struct inet6_tx_mc_sock_params
+							inet6_tx_sock_parms)
+{
+	uint8_t pkt_buf[PKT_BUF_SIZE];
+	ssize_t rx_pkt_len;
+
+
+	log_debug("%s() entry\n", __func__);
+
+	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
+	if (*inet_in_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet_out_sock_fd = open_inet_tx_mc_sock(inet_tx_sock_parms.mc_ttl,
+		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
+	if (*inet_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet6_out_sock_fd = open_inet6_tx_mc_sock(inet6_tx_sock_parms.mc_hops,
+		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
+	if (*inet6_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	for ( ;; ) {
+		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		if (rx_pkt_len > 0) {
+			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+				inet_tx_sock_parms.mc_dests,
+				inet_tx_sock_parms.mc_dests_num);
+			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+				inet6_tx_sock_parms.mc_dests,
+				inet6_tx_sock_parms.mc_dests_num);
 		}
 	}
 
@@ -258,6 +328,8 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum)
 {
 
+
+	log_debug("%s() entry\n", __func__);
 
 	fprintf(stderr, "%s():%d error: %s\n", func_name, linenum,
 		strerror(errnum));
@@ -276,6 +348,8 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 	struct sockaddr_in sa_in_mcaddr;
 	struct ip_mreq ip_mcast_req;
 
+
+	log_debug("%s() entry\n", __func__);
 
 	/* socket() */
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -319,6 +393,8 @@ void close_inet_rx_mc_sock(const int sock_fd)
 {
 
 
+	log_debug("%s() entry\n", __func__);
+
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
@@ -336,6 +412,8 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	struct sockaddr_in6 sa_in6_mcaddr;
 	struct ipv6_mreq ipv6_mcast_req;
 
+
+	log_debug("%s() entry\n", __func__);
 
 	/* socket() */
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
@@ -379,6 +457,8 @@ void close_inet6_rx_mc_sock(const int sock_fd)
 {
 
 
+	log_debug("%s() entry\n", __func__);
+
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
@@ -395,6 +475,8 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 	uint8_t mcloop;
 	int ret;
 
+
+	log_debug("%s() entry\n", __func__);
 
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
@@ -436,6 +518,8 @@ void close_inet_tx_mc_sock(int sock_fd)
 {
 
 
+	log_debug("%s() entry\n", __func__);
+
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
@@ -450,6 +534,8 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 	int sock_fd;
 	int ret;
 
+
+	log_debug("%s() entry\n", __func__);
 
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
@@ -485,6 +571,8 @@ void close_inet6_tx_mc_sock(int sock_fd)
 {
 
 
+	log_debug("%s() entry\n", __func__);
+
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
@@ -503,6 +591,8 @@ int inet_tx_mcast(const int sock_fd,
 	ssize_t ret;
 
 
+	log_debug("%s() entry\n", __func__);
+
 	for (i = 0; i < mc_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
 			(struct sockaddr *)&inet_mc_dests[i],
@@ -510,6 +600,8 @@ int inet_tx_mcast(const int sock_fd,
 		if (ret != -1) {
 			tx_success++;
 		}
+		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 	}
 
 	return tx_success;
@@ -528,15 +620,17 @@ int inet6_tx_mcast(const int sock_fd,
 	ssize_t ret;
 
 
+	log_debug("%s() entry\n", __func__);
+
 	for (i = 0; i < mc_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
 			(struct sockaddr *)&inet6_mc_dests[i],
 			sizeof(struct sockaddr_in6));
 		if (ret != -1) {
 			tx_success++;
-		} else {
-			exit_errno(__func__, __LINE__, errno);
-		}	
+		}
+		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
 	}
 
 	return tx_success;

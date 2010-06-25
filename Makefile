@@ -1,7 +1,13 @@
+CFLAGS_DEBUG = -DLIBLOG_DEBUG_ALL
+#CFLAGS_DEBUG =
 
+CFLAGS = -Wall $(CFLAGS_DEBUG)
 
-replicast : global.h replicast.c
-	gcc -Wall -o replicast replicast.c
+replicast : log global.h replicast.c
+	gcc $(CFLAGS) replicast.c -o replicast log.o
+
+log : log.h log.c
+	gcc $(CFLAGS) -c log.c -o log.o
 
 clean :
-	rm -f replicast
+	rm -f replicast log.o
