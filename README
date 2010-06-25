@@ -1,0 +1,27 @@
+
+
+
+o  IPv4 Static Routes for Multicast Input and Output Interface Selection
+
+e.g.
+
+	'ip route 224/4 dev eth0'
+
+	'ip route 224.4.4.4/32 dev eth1'
+	'ip route 224.5.5.5/32 dev eth2'
+
+
+o  IPv6 Static Routes for Multicast Input and Output Interface Selection
+
+
+e.g.
+
+	'ip -6 route ff05::/16 dev eth0 table local'
+	'ip -6 route ff02::5/128 dev eth1 table local'
+
+
+to view static multicast routes
+
+	'ip -6 route show table local'
+
+	
