@@ -181,9 +181,9 @@ int main(int argc, char *argv[])
 		tx_sock_parms);
 */
 
-	inet_pton(AF_INET6, "ff01::15", &rx6_sock_parms.mc_group);
+	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
 	rx6_sock_parms.port = 1234;
-	rx6_sock_parms.in_intf_idx = 1;
+	rx6_sock_parms.in_intf_idx = 11;
 
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;
@@ -219,8 +219,14 @@ int main(int argc, char *argv[])
 
 */
 
+/*
 	inet6_to_inet6_mcast(&inet6_in_sock_fd, rx6_sock_parms,
 			     &inet6_out_sock_fd, tx6_sock_parms);
+
+*/
+
+	inet6_to_inet_mcast(&inet6_in_sock_fd, rx6_sock_parms,
+			     &inet_out_sock_fd, tx_sock_parms);
 
 	return 0;
 
