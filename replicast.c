@@ -168,9 +168,9 @@ int main(int argc, char *argv[])
 		tx_sock_parms);
 */
 
-	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
+	inet_pton(AF_INET6, "ff02::30", &rx6_sock_parms.mc_group);
 	rx6_sock_parms.port = 1234;
-	rx6_sock_parms.in_intf_idx = 0;
+	rx6_sock_parms.in_intf_idx = 2;
 
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;
@@ -497,6 +497,9 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	sa_in6_mcaddr.sin6_family = AF_INET6;
 	sa_in6_mcaddr.sin6_addr = mc_group;
 	sa_in6_mcaddr.sin6_port = htons(port);
+	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_mcaddr.sin6_addr)) {
+		sa_in6_mcaddr.sin6_scope_id = in_intf_idx;
+	}
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_mcaddr,
 		sizeof(sa_in6_mcaddr));
 	if (ret == -1) {
