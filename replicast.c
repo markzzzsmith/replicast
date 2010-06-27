@@ -78,6 +78,19 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 			  int *inet6_out_sock_fd,
 			  struct inet6_tx_mc_sock_params tx_sock_parms);
 
+void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+			 struct inet6_rx_mc_sock_params rx_sock_parms,
+			 int *inet_out_sock_fd,
+			 struct inet_tx_mc_sock_params tx_sock_parms);
+
+void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+			       struct inet6_rx_mc_sock_params rx_sock_parms,
+			       int *inet_out_sock_fd,
+			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			       int *inet6_out_sock_fd,
+			       struct inet6_tx_mc_sock_params
+							inet6_tx_sock_parms);
+
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
@@ -168,9 +181,9 @@ int main(int argc, char *argv[])
 		tx_sock_parms);
 */
 
-	inet_pton(AF_INET6, "ff02::30", &rx6_sock_parms.mc_group);
+	inet_pton(AF_INET6, "ff01::15", &rx6_sock_parms.mc_group);
 	rx6_sock_parms.port = 1234;
-	rx6_sock_parms.in_intf_idx = 2;
+	rx6_sock_parms.in_intf_idx = 1;
 
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;
@@ -378,6 +391,89 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
+		}
+	}
+
+}
+
+
+void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+			 struct inet6_rx_mc_sock_params rx_sock_parms,
+			 int *inet_out_sock_fd,
+			 struct inet_tx_mc_sock_params tx_sock_parms)
+{
+	uint8_t pkt_buf[PKT_BUF_SIZE];
+	ssize_t rx_pkt_len;
+
+
+	log_debug("%s() entry\n", __func__);
+
+	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	if (*inet6_in_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet_out_sock_fd = open_inet_tx_mc_sock(tx_sock_parms.mc_ttl,
+		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
+	if (*inet_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	for ( ;; ) {
+		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		if (rx_pkt_len > 0) {
+			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+				tx_sock_parms.mc_dests,
+				tx_sock_parms.mc_dests_num);
+		}
+	}
+
+}
+
+void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+			       struct inet6_rx_mc_sock_params rx_sock_parms,
+			       int *inet_out_sock_fd,
+			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			       int *inet6_out_sock_fd,
+			       struct inet6_tx_mc_sock_params
+							inet6_tx_sock_parms)
+{
+	uint8_t pkt_buf[PKT_BUF_SIZE];
+	ssize_t rx_pkt_len;
+
+
+	log_debug("%s() entry\n", __func__);
+
+	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	if (*inet6_in_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet_out_sock_fd = open_inet_tx_mc_sock(inet_tx_sock_parms.mc_ttl,
+		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
+	if (*inet_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	*inet6_out_sock_fd = open_inet6_tx_mc_sock(inet6_tx_sock_parms.mc_hops,
+		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
+	if (*inet6_out_sock_fd == -1) {
+		exit_errno(__func__, __LINE__, errno);
+	}
+
+	for ( ;; ) {
+		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		if (rx_pkt_len > 0) {
+			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+				inet_tx_sock_parms.mc_dests,
+				inet_tx_sock_parms.mc_dests_num);
+			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+				inet6_tx_sock_parms.mc_dests,
+				inet6_tx_sock_parms.mc_dests_num);
 		}
 	}
 
