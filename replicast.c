@@ -178,18 +178,18 @@ int main(int argc, char *argv[])
 	struct inet6_rx_mc_sock_params rx6_sock_parms;
 	struct inet6_tx_mc_sock_params tx6_sock_parms;
 	struct sockaddr_in6 inet6_mc_dests[3];
+	char out_if[30];
+	int ret;
 	
 
 	atexit(close_sockets);
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
+/*
 	aip_pton_inet(argv[1], &rx_sock_parms.mc_group,
 		&rx_sock_parms.in_intf_addr, &rx_sock_parms.port, NULL);
-	//inet_pton(AF_INET, "224.4.4.4", &rx_sock_parms.mc_group);
-	//rx_sock_parms.port = 1234;
-	//inet_pton(AF_INET, "1.1.1.1", &rx_sock_parms.in_intf_addr);
-	//rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY; /* use route table */
+*/
 
 	tx_sock_parms.mc_ttl = 1;
 	tx_sock_parms.mc_loop = 1;
@@ -214,11 +214,20 @@ int main(int argc, char *argv[])
 	tx_sock_parms.mc_dests = inet_mc_dests;
 	tx_sock_parms.mc_dests_num = 3;
 	
+/*
 	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
 		tx_sock_parms);
+*/
 
+	printf("argv[1] = %s\n", argv[1]);
+	ret = aip_pton_inet6(argv[1], &rx6_sock_parms.mc_group,
+		out_if, 30, &rx6_sock_parms.port, NULL);
+	printf("ret = %d\n", ret);
+
+	printf("out_if = %s\n", out_if);
+/*
 	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
-	rx6_sock_parms.port = 1234;
+	rx6_sock_parms.port = 1234; */
 	rx6_sock_parms.in_intf_idx = 11;
 
 	tx6_sock_parms.mc_hops = 1;
@@ -255,11 +264,11 @@ int main(int argc, char *argv[])
 
 */
 
-/*
+
 	inet6_to_inet6_mcast(&inet6_in_sock_fd, rx6_sock_parms,
 			     &inet6_out_sock_fd, tx6_sock_parms);
 
-*/
+
 
 /*
 	inet6_to_inet_mcast(&inet6_in_sock_fd, rx6_sock_parms,

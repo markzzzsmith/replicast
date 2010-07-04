@@ -10,6 +10,8 @@
  *
  */
 
+#include <stdio.h> /* remove after debugging */
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -83,6 +85,110 @@ int aip_pton_inet(const char *aip_str,
 		}
 		free(str);
 		return -1;
+	}
+
+	if (port_str != NULL) { 
+		*port = atoi(port_str);
+		if (*port > 0xffff) {
+			if (aip_pton_err != NULL) {
+				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			}
+			*port = 0;
+			free(str);
+			return -1;
+		}
+	}
+
+	free(str);
+
+	return 0;
+
+}
+
+
+
+int aip_pton_inet6(const char *aip_str,
+		   struct in6_addr *addr,
+ 		   char *if_str,
+		   const unsigned int if_str_len,
+		   unsigned int *port,
+		   enum aip_pton_errors *aip_pton_err)
+{
+	char *str = NULL;
+	char *addr_str = NULL;
+	char *s = NULL;
+	char *if_name_str = NULL;
+	char *port_str = NULL;
+
+
+	if (if_str_len == 0) {
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_IF_STR_LEN_BAD;
+		}
+		return -1;
+	}
+
+	inet_pton(AF_INET6, "::", addr);
+	if_str[0] = '\0';
+	*port = 0;
+	if (aip_pton_err != NULL) {
+		*aip_pton_err = AIP_PTON_ERR_NO_ERROR;
+	}
+
+	str = strdup(aip_str);
+	if (str == NULL) {
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_STRDUP;
+		}
+		return -1;
+	}
+
+	if (str[0] != '[') {
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		}
+		return -1;
+	}
+
+	addr_str = &str[1];
+
+	s = strchr(str, '%');
+	if (s != NULL) {
+		*s = '\0';
+		s++;
+		if_name_str = s;
+	} else {
+		s = str;
+		if_name_str = NULL;
+	}
+
+	s = strchr(s, ']');
+	if (s != NULL) {
+		*s = '\0';
+		s++;
+		if (*s != ':') {
+			if (aip_pton_err != NULL) {
+				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			}
+			return -1;
+		}	
+		port_str = s + 1;
+	} else {
+		s = str;
+		port_str = NULL;
+	}
+
+	if (inet_pton(AF_INET6, addr_str, addr) != 1) {
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		}
+		free(str);
+		return -1;
+	}
+
+	if (if_name_str != NULL) {
+		strncpy(if_str, if_name_str, if_str_len);
+		if_str[if_str_len - 1] = '\0';
 	}
 
 	if (port_str != NULL) { 
