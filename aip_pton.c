@@ -34,7 +34,9 @@ int aip_pton_inet(const char *aip_str,
 	addr->s_addr = INADDR_NONE;
 	if_addr->s_addr = INADDR_NONE;
 	*port = 0;
-	*aip_pton_err = AIP_PTON_ERR_NO_ERROR;
+	if (aip_pton_err != NULL) {
+		*aip_pton_err = AIP_PTON_ERR_NO_ERROR;
+	}
 
 	str = strdup(aip_str);
 	if (str == NULL) {
@@ -60,14 +62,18 @@ int aip_pton_inet(const char *aip_str,
 	}
 
 	if (inet_pton(AF_INET, addr_str, addr) != 1) {
-		*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		}
 		free(str);
 		return -1;
 	}
 
 	if ((if_addr_str != NULL) &&
 			(inet_pton(AF_INET, if_addr_str, if_addr) != 1)) {
-		*aip_pton_err = AIP_PTON_ERR_BAD_IF_ADDR;
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_BAD_IF_ADDR;
+		}
 		free(str);
 		return -1;
 	}
@@ -75,8 +81,11 @@ int aip_pton_inet(const char *aip_str,
 	if (port_str != NULL) { 
 		*port = atoi(port_str);
 		if ((*port < 0) || (*port > 0xff)) {
-			*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			if (aip_pton_err != NULL) {
+				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			}
 			*port = 0;
+			free(str);
 			return -1;
 		}
 	}
