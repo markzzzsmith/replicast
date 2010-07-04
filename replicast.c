@@ -48,10 +48,45 @@ struct inet6_tx_mc_sock_params {
 };
 
 
-enum {
+struct program_parameters {
+	struct inet_rx_mc_sock_params inet_rx_sock_parms;
+	struct inet_tx_mc_sock_params inet_tx_sock_parms;
+	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
+	struct inet6_tx_mc_sock_params inet6_tx_sock_parms;
+};
+
+enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
 };
 
+
+enum PARAM_ERRORS {
+	PRMERR_NO_ERROR,
+	PRMERR_NO_PARAMS,
+};
+
+enum REPLICAST_MODE {
+	RCMODE_ERROR,
+	RCMODE_INET_TO_INET,
+	RCMODE_INET_TO_INET6,
+	RCMODE_INET_TO_INET_INET6,
+	RCMODE_INET6_TO_INET6,
+	RCMODE_INET6_TO_INET,
+	RCMODE_INET6_TO_INET_INET6,
+};
+
+
+enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
+				   struct program_parameters *prog_parms,
+				   enum PARAM_ERRORS **parm_error);
+
+int str_to_inet(const int af,
+		const char *str,
+		struct in_addr *addr,
+		unsigned int *port,
+		char *intf,
+		const unsigned int intf_len);
+		
 
 void close_sockets(void);
 
@@ -229,6 +264,18 @@ int main(int argc, char *argv[])
 			     &inet_out_sock_fd, tx_sock_parms);
 
 	return 0;
+
+}
+
+
+enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
+				   struct program_parameters *prog_parms,
+				   enum PARAM_ERRORS **parm_error)
+{
+
+
+	*parm_error = PRMERR_NO_ERROR;
+	return RCMODE_ERROR;
 
 }
 

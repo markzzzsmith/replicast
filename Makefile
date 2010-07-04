@@ -4,10 +4,13 @@ CFLAGS_DEBUG =
 CFLAGS = -Wall $(CFLAGS_DEBUG)
 
 replicast : log global.h replicast.c
-	gcc $(CFLAGS) replicast.c -o replicast log.o
+	clang $(CFLAGS) replicast.c -o replicast log.o
 
 log : log.h log.c
-	gcc $(CFLAGS) -c log.c -o log.o
+	clang $(CFLAGS) -c log.c -o log.o
+
+aip_pton : aip_pton.h aip_pton.c
+	clang $(CFLAGS) -c aip_pton.c -o aip_pton.o
 
 clean :
 	rm -f replicast log.o
