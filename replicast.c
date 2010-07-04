@@ -17,6 +17,7 @@
 
 #include "global.h"
 #include "log.h"
+#include "aip_pton.h"
 
 
 struct inet_rx_mc_sock_params {
@@ -183,10 +184,12 @@ int main(int argc, char *argv[])
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
-	inet_pton(AF_INET, "224.4.4.4", &rx_sock_parms.mc_group);
-	rx_sock_parms.port = 1234;
+	aip_pton_inet(argv[1], &rx_sock_parms.mc_group,
+		&rx_sock_parms.in_intf_addr, &rx_sock_parms.port, NULL);
+	//inet_pton(AF_INET, "224.4.4.4", &rx_sock_parms.mc_group);
+	//rx_sock_parms.port = 1234;
 	//inet_pton(AF_INET, "1.1.1.1", &rx_sock_parms.in_intf_addr);
-	rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY; /* use route table */
+	//rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY; /* use route table */
 
 	tx_sock_parms.mc_ttl = 1;
 	tx_sock_parms.mc_loop = 1;
@@ -211,10 +214,8 @@ int main(int argc, char *argv[])
 	tx_sock_parms.mc_dests = inet_mc_dests;
 	tx_sock_parms.mc_dests_num = 3;
 	
-/*
 	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
 		tx_sock_parms);
-*/
 
 	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
 	rx6_sock_parms.port = 1234;
@@ -260,8 +261,10 @@ int main(int argc, char *argv[])
 
 */
 
+/*
 	inet6_to_inet_mcast(&inet6_in_sock_fd, rx6_sock_parms,
 			     &inet_out_sock_fd, tx_sock_parms);
+ */
 
 	return 0;
 

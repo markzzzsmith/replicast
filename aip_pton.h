@@ -6,6 +6,7 @@
 
 enum aip_pton_errors {
 	AIP_PTON_ERR_NO_ERROR,
+	AIP_PTON_ERR_STRDUP,
 	AIP_PTON_ERR_BAD_ADDR,
 	AIP_PTON_ERR_BAD_IF_ADDR,
 	AIP_PTON_ERR_BAD_PORT
@@ -15,7 +16,7 @@ enum aip_pton_errors {
 int aip_pton_inet(const char *aip_str,
 		   struct in_addr *addr,
 		   struct in_addr *if_addr,
-		   int *port,
+		   unsigned int *port,
 		   enum aip_pton_errors *aip_pton_err);
 
 

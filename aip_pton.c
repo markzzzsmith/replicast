@@ -21,7 +21,7 @@
 int aip_pton_inet(const char *aip_str,
                    struct in_addr *addr,
                    struct in_addr *if_addr,
-                   int *port,
+                   unsigned int *port,
 		   enum aip_pton_errors *aip_pton_err)
 {
 	char *str = NULL;
@@ -40,6 +40,9 @@ int aip_pton_inet(const char *aip_str,
 
 	str = strdup(aip_str);
 	if (str == NULL) {
+		if (aip_pton_err != NULL) {
+			*aip_pton_err = AIP_PTON_ERR_STRDUP;
+		}
 		return -1;
 	}
 
@@ -47,17 +50,21 @@ int aip_pton_inet(const char *aip_str,
 
 	s = strchr(str, '%');
 	if (s != NULL) {
-		if_addr_str = s + 1;
 		*s = '\0';
+		s++;
+		if_addr_str = s;
 	} else {
+		s = str;
 		if_addr_str = NULL;
 	}
 
-	s = strchr(str, ':');
+	s = strchr(s, ':');
 	if (s != NULL) {
-		port_str = s + 1;
 		*s = '\0';
+		s++;
+		port_str = s;
 	} else {
+		s = str;
 		port_str = NULL;
 	}
 
@@ -80,7 +87,7 @@ int aip_pton_inet(const char *aip_str,
 
 	if (port_str != NULL) { 
 		*port = atoi(port_str);
-		if ((*port < 0) || (*port > 0xff)) {
+		if (*port > 0xffff) {
 			if (aip_pton_err != NULL) {
 				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
 			}
