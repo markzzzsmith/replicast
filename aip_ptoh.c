@@ -1,6 +1,6 @@
 /*
- * aip_pton - convert address, interface and port strings into network
- * format.
+ * aip_ptoh - convert address, interface and port strings from presentation to
+ * host native format.
  * 
  * formats supported -
  *
@@ -17,16 +17,16 @@
 
 #include <arpa/inet.h>
 
-#include "aip_pton.h"
+#include "aip_ptoh.h"
 
 
-int aip_pton_inet(const char *aip_str,
-                   struct in_addr *addr,
-                   struct in_addr *if_addr,
-                   unsigned int *port,
-		   enum aip_pton_errors *aip_pton_err)
+int aip_ptoh_inet(const char *aip_str,
+                  struct in_addr *addr,
+                  struct in_addr *if_addr,
+                  unsigned int *port,
+		  enum aip_ptoh_errors *aip_ptoh_err)
 {
-	char *str = NULL;
+	char str[AIP_STR_INET_MAX_LEN + 1];
 	char *addr_str = NULL;
 	char *s = NULL;
 	char *if_addr_str = NULL;
@@ -36,17 +36,12 @@ int aip_pton_inet(const char *aip_str,
 	addr->s_addr = INADDR_NONE;
 	if_addr->s_addr = INADDR_NONE;
 	*port = 0;
-	if (aip_pton_err != NULL) {
-		*aip_pton_err = AIP_PTON_ERR_NO_ERROR;
+	if (aip_ptoh_err != NULL) {
+		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
 	}
 
-	str = strdup(aip_str);
-	if (str == NULL) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_STRDUP;
-		}
-		return -1;
-	}
+	strncpy(str, aip_str, AIP_STR_INET_MAX_LEN);
+	str[AIP_STR_INET_MAX_LEN] = '\0';
 
 	addr_str = str;
 
@@ -71,35 +66,30 @@ int aip_pton_inet(const char *aip_str,
 	}
 
 	if (inet_pton(AF_INET, addr_str, addr) != 1) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
 		}
-		free(str);
 		return -1;
 	}
 
 	if ((if_addr_str != NULL) &&
 			(inet_pton(AF_INET, if_addr_str, if_addr) != 1)) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_BAD_IF_ADDR;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_BAD_IF_ADDR;
 		}
-		free(str);
 		return -1;
 	}
 
 	if (port_str != NULL) { 
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
-			if (aip_pton_err != NULL) {
-				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			if (aip_ptoh_err != NULL) {
+				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
 			}
 			*port = 0;
-			free(str);
 			return -1;
 		}
 	}
-
-	free(str);
 
 	return 0;
 
@@ -107,12 +97,12 @@ int aip_pton_inet(const char *aip_str,
 
 
 
-int aip_pton_inet6(const char *aip_str,
+int aip_ptoh_inet6(const char *aip_str,
 		   struct in6_addr *addr,
  		   char *if_str,
 		   const unsigned int if_str_len,
 		   unsigned int *port,
-		   enum aip_pton_errors *aip_pton_err)
+		   enum aip_ptoh_errors *aip_ptoh_err)
 {
 	char *str = NULL;
 	char *addr_str = NULL;
@@ -122,8 +112,8 @@ int aip_pton_inet6(const char *aip_str,
 
 
 	if (if_str_len == 0) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_IF_STR_LEN_BAD;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_IF_STR_LEN_BAD;
 		}
 		return -1;
 	}
@@ -131,21 +121,21 @@ int aip_pton_inet6(const char *aip_str,
 	inet_pton(AF_INET6, "::", addr);
 	if_str[0] = '\0';
 	*port = 0;
-	if (aip_pton_err != NULL) {
-		*aip_pton_err = AIP_PTON_ERR_NO_ERROR;
+	if (aip_ptoh_err != NULL) {
+		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
 	}
 
 	str = strdup(aip_str);
 	if (str == NULL) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_STRDUP;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_STRDUP;
 		}
 		return -1;
 	}
 
 	if (str[0] != '[') {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
 		}
 		return -1;
 	}
@@ -167,8 +157,8 @@ int aip_pton_inet6(const char *aip_str,
 		*s = '\0';
 		s++;
 		if (*s != ':') {
-			if (aip_pton_err != NULL) {
-				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			if (aip_ptoh_err != NULL) {
+				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
 			}
 			return -1;
 		}	
@@ -179,8 +169,8 @@ int aip_pton_inet6(const char *aip_str,
 	}
 
 	if (inet_pton(AF_INET6, addr_str, addr) != 1) {
-		if (aip_pton_err != NULL) {
-			*aip_pton_err = AIP_PTON_ERR_BAD_ADDR;
+		if (aip_ptoh_err != NULL) {
+			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
 		}
 		free(str);
 		return -1;
@@ -194,8 +184,8 @@ int aip_pton_inet6(const char *aip_str,
 	if (port_str != NULL) { 
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
-			if (aip_pton_err != NULL) {
-				*aip_pton_err = AIP_PTON_ERR_BAD_PORT;
+			if (aip_ptoh_err != NULL) {
+				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
 			}
 			*port = 0;
 			free(str);
