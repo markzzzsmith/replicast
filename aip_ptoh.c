@@ -104,7 +104,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		   unsigned int *port,
 		   enum aip_ptoh_errors *aip_ptoh_err)
 {
-	char *str = NULL;
+	char str[AIP_STR_INET6_MAX_LEN + 1];
 	char *addr_str = NULL;
 	char *s = NULL;
 	char *if_name_str = NULL;
@@ -125,13 +125,8 @@ int aip_ptoh_inet6(const char *aip_str,
 		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
 	}
 
-	str = strdup(aip_str);
-	if (str == NULL) {
-		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_STRDUP;
-		}
-		return -1;
-	}
+	strncpy(str, aip_str, AIP_STR_INET6_MAX_LEN);
+	str[AIP_STR_INET6_MAX_LEN] = '\0';
 
 	if (str[0] != '[') {
 		if (aip_ptoh_err != NULL) {
@@ -172,7 +167,6 @@ int aip_ptoh_inet6(const char *aip_str,
 		if (aip_ptoh_err != NULL) {
 			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
 		}
-		free(str);
 		return -1;
 	}
 
@@ -188,12 +182,9 @@ int aip_ptoh_inet6(const char *aip_str,
 				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
 			}
 			*port = 0;
-			free(str);
 			return -1;
 		}
 	}
-
-	free(str);
 
 	return 0;
 

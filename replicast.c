@@ -212,21 +212,21 @@ int main(int argc, char *argv[])
 	tx_sock_parms.mc_dests = inet_mc_dests;
 	tx_sock_parms.mc_dests_num = 3;
 	
+/*
 	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
 		tx_sock_parms);
+*/
 
-/*
 	printf("argv[1] = %s\n", argv[1]);
 	ret = aip_ptoh_inet6(argv[1], &rx6_sock_parms.mc_group,
 		out_if, 30, &rx6_sock_parms.port, NULL);
 	printf("ret = %d\n", ret);
 
 	printf("out_if = %s\n", out_if);
-*/
 /*
 	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
 	rx6_sock_parms.port = 1234; */
-	rx6_sock_parms.in_intf_idx = 11;
+	rx6_sock_parms.in_intf_idx = 1;
 
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;

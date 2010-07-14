@@ -13,15 +13,20 @@
 #define __AIP_PTOH_H
 
 
+#include <net/if.h>
 #include <netinet/in.h>
 
 enum {
-	AIP_STR_INET_MAX_LEN = 37,  /* XXX.XXX.XXX.XXX%XXX.XXX.XXX.XXX:65432 */
+	/* <inet addr>%<ifaddr>:<port> */
+	AIP_STR_INET_MAX_LEN = INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN + 1 + 5,
+
+	/* [<inet6 addr>%<ifname>]:<port> */
+	AIP_STR_INET6_MAX_LEN = 1 + INET6_ADDRSTRLEN + 1 + IF_NAMESIZE + 1\
+		+ 1 + 5,
 };
 
 enum aip_ptoh_errors {
 	AIP_PTOH_ERR_NO_ERROR,
-	AIP_PTOH_ERR_STRDUP,
 	AIP_PTOH_ERR_BAD_ADDR,
 	AIP_PTOH_ERR_BAD_IF_ADDR,
 	AIP_PTOH_ERR_BAD_PORT,
