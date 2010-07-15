@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <arpa/inet.h>
+#include <net/if.h>
 
 #include "aip_ptoh.h"
 
@@ -99,8 +100,7 @@ int aip_ptoh_inet(const char *aip_str,
 
 int aip_ptoh_inet6(const char *aip_str,
 		   struct in6_addr *addr,
- 		   char *if_str,
-		   const unsigned int if_str_len,
+		   unsigned int *ifidx,
 		   unsigned int *port,
 		   enum aip_ptoh_errors *aip_ptoh_err)
 {
@@ -111,15 +111,8 @@ int aip_ptoh_inet6(const char *aip_str,
 	char *port_str = NULL;
 
 
-	if (if_str_len == 0) {
-		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_IF_STR_LEN_BAD;
-		}
-		return -1;
-	}
-
 	inet_pton(AF_INET6, "::", addr);
-	if_str[0] = '\0';
+	*ifidx = 0;
 	*port = 0;
 	if (aip_ptoh_err != NULL) {
 		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
@@ -171,8 +164,7 @@ int aip_ptoh_inet6(const char *aip_str,
 	}
 
 	if (if_name_str != NULL) {
-		strncpy(if_str, if_name_str, if_str_len);
-		if_str[if_str_len - 1] = '\0';
+		*ifidx = if_nametoindex(if_name_str);
 	}
 
 	if (port_str != NULL) { 

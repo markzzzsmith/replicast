@@ -219,14 +219,14 @@ int main(int argc, char *argv[])
 
 	printf("argv[1] = %s\n", argv[1]);
 	ret = aip_ptoh_inet6(argv[1], &rx6_sock_parms.mc_group,
-		out_if, 30, &rx6_sock_parms.port, NULL);
+		&rx6_sock_parms.in_intf_idx, &rx6_sock_parms.port, NULL);
 	printf("ret = %d\n", ret);
 
-	printf("out_if = %s\n", out_if);
 /*
 	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
-	rx6_sock_parms.port = 1234; */
+	rx6_sock_parms.port = 1234; 
 	rx6_sock_parms.in_intf_idx = 1;
+*/
 
 	tx6_sock_parms.mc_hops = 1;
 	tx6_sock_parms.mc_loop = 1;
