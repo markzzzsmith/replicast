@@ -105,7 +105,10 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 {
 	int sa_list_len = 0;
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
-	char *comma_ptr;
+	int more_aip_str = 0;
+	const char *curr_aip_str = NULL;
+	char *ap_csv_comma_ptr = NULL;
+	char *aip_str_comma_ptr = NULL;
 	struct sockaddr_in ap_sa;
 	struct in_addr tmp_in_addr;
 	unsigned int port;
@@ -117,38 +120,17 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		return -1;
 	}
 
-	strncpy(aip_str, ap_inet_csv_str, AIP_STR_INET_MAX_LEN);
+	curr_aip_str = ap_inet_csv_str;
+
+	strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
 	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
 
-	comma_ptr = strchr(aip_str, ',');
-	if (comma_ptr != NULL) {
-		*comma_ptr = '\0';
+	aip_str_comma_ptr = strchr(aip_str, ',');
+	if (aip_str_comma_ptr != NULL) {
+		*aip_str_comma_ptr = '\0';
 	}
 
-	memset(&ap_sa, 0, sizeof(ap_sa));
-
-	ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
-			    &port, &aip_ptoh_err);
-
-	if (ret != -1) {
-		ap_sa.sin_family = AF_INET;
-		ap_sa.sin_port = htons(port);
-		sa_list_len++;
-
-		*ap_sa_list = realloc(*ap_sa_list, sa_list_len * sizeof(ap_sa));
-		memcpy(&((*ap_sa_list)[sa_list_len - 1]), &ap_sa,
-		       sizeof(ap_sa));
-	} else {
-		strncpy(ap_err_str, aip_str, ap_err_str_size - 1);
-		ap_err_str[ap_err_str_size] = '\0';
-		return -1;
-	}
-
-	comma_ptr = strchr(ap_inet_csv_str, ',');
-	while (comma_ptr != NULL) {
-		strncpy(aip_str, comma_ptr + 1, AIP_STR_INET_MAX_LEN);
-        	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
-
+	do {
 		memset(&ap_sa, 0, sizeof(ap_sa));
 
 		ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
@@ -169,9 +151,23 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 			return -1;
 		}
 
-		comma_ptr = strchr(comma_ptr + 1, ',');
+		ap_csv_comma_ptr = strchr(curr_aip_str, ',');
+		if (ap_csv_comma_ptr == NULL) {
+			more_aip_str = 0;
+		} else {
+			curr_aip_str = ap_csv_comma_ptr + 1;
 
-	}
+			strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
+			aip_str[AIP_STR_INET_MAX_LEN] = '\0';
+
+			aip_str_comma_ptr = strchr(aip_str, ',');
+			if (aip_str_comma_ptr != NULL) {
+				*aip_str_comma_ptr = '\0';
+			}
+			more_aip_str = 1;
+		}
+
+	} while (more_aip_str);
 
 	return sa_list_len;
 
