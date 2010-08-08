@@ -97,6 +97,86 @@ int aip_ptoh_inet(const char *aip_str,
 }
 
 
+int ap_pton_inet_csv(const char *ap_inet_csv_str,
+		     struct sockaddr_in **ap_sa_list,
+		     const int max_sa_list_len,
+		     char *ap_err_str,
+		     const unsigned int ap_err_str_size)
+{
+	int sa_list_len = 0;
+	char aip_str[AIP_STR_INET_MAX_LEN + 1];
+	char *comma_ptr;
+	struct sockaddr_in ap_sa;
+	struct in_addr tmp_in_addr;
+	unsigned int port;
+	int ret;
+	enum aip_ptoh_errors aip_ptoh_err;
+
+
+	if (*ap_sa_list != NULL) {
+		return -1;
+	}
+
+	strncpy(aip_str, ap_inet_csv_str, AIP_STR_INET_MAX_LEN);
+	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
+
+	comma_ptr = strchr(aip_str, ',');
+	if (comma_ptr != NULL) {
+		*comma_ptr = '\0';
+	}
+
+	memset(&ap_sa, 0, sizeof(ap_sa));
+
+	ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
+			    &port, &aip_ptoh_err);
+
+	if (ret != -1) {
+		ap_sa.sin_family = AF_INET;
+		ap_sa.sin_port = htons(port);
+		sa_list_len++;
+
+		*ap_sa_list = realloc(*ap_sa_list, sa_list_len * sizeof(ap_sa));
+		memcpy(&((*ap_sa_list)[sa_list_len - 1]), &ap_sa,
+		       sizeof(ap_sa));
+	} else {
+		strncpy(ap_err_str, aip_str, ap_err_str_size - 1);
+		ap_err_str[ap_err_str_size] = '\0';
+		return -1;
+	}
+
+	comma_ptr = strchr(ap_inet_csv_str, ',');
+	while (comma_ptr != NULL) {
+		strncpy(aip_str, comma_ptr + 1, AIP_STR_INET_MAX_LEN);
+        	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
+
+		memset(&ap_sa, 0, sizeof(ap_sa));
+
+		ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
+				    &port, &aip_ptoh_err);
+
+		if (ret != -1) {
+			ap_sa.sin_family = AF_INET;
+			ap_sa.sin_port = htons(port);
+			sa_list_len++;
+
+			*ap_sa_list = realloc(*ap_sa_list,
+					      sa_list_len * sizeof(ap_sa));
+			memcpy(&((*ap_sa_list)[sa_list_len - 1]), &ap_sa,
+			       sizeof(ap_sa));
+		} else {
+			strncpy(ap_err_str, aip_str, ap_err_str_size - 1);
+			ap_err_str[ap_err_str_size] = '\0';
+			return -1;
+		}
+
+		comma_ptr = strchr(comma_ptr + 1, ',');
+
+	}
+
+	return sa_list_len;
+
+}
+
 
 int aip_ptoh_inet6(const char *aip_str,
 		   struct in6_addr *addr,

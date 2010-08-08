@@ -39,6 +39,12 @@ int aip_ptoh_inet(const char *aip_str,
 		  unsigned int *port,
 		  enum aip_ptoh_errors *aip_ptoh_err);
 
+int ap_pton_inet_csv(const char *ap_inet_csv_str,
+		     struct sockaddr_in **ap_sa_list,
+		     const int max_sa_list_len,
+		     char *ap_err_str,
+		     const unsigned int ap_err_str_size);
+
 int aip_ptoh_inet6(const char *aip_str,
 		   struct in6_addr *addr,
 		   unsigned int *ifidx,

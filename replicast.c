@@ -174,11 +174,14 @@ int main(int argc, char *argv[])
 {
 	struct inet_rx_mc_sock_params rx_sock_parms;
 	struct inet_tx_mc_sock_params tx_sock_parms;
-	struct sockaddr_in inet_mc_dests[3];
+	//struct sockaddr_in inet_mc_dests[3];
+	struct sockaddr_in *inet_mc_dests = NULL;
 	struct inet6_rx_mc_sock_params rx6_sock_parms;
 	struct inet6_tx_mc_sock_params tx6_sock_parms;
 	struct sockaddr_in6 inet6_mc_dests[3];
 	char out_if[30];
+	char ap_err_str[AIP_STR_INET_MAX_LEN + 1];
+	int ap_pton_inet_csv_ret;
 	int ret;
 	
 
@@ -186,14 +189,25 @@ int main(int argc, char *argv[])
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
+
 	aip_ptoh_inet(argv[1], &rx_sock_parms.mc_group,
 		&rx_sock_parms.in_intf_addr, &rx_sock_parms.port, NULL);
+	if (rx_sock_parms.in_intf_addr.s_addr == INADDR_NONE) {
+		rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY;
+	}
+
+	ap_pton_inet_csv_ret = ap_pton_inet_csv(argv[2], &inet_mc_dests, 0,
+		(char *)&ap_err_str, AIP_STR_INET_MAX_LEN + 1);
+
+	printf("ap_pton_inet_csv_ret = %d\n", ap_pton_inet_csv_ret);
+	printf("ap_err_str = %s\n", ap_err_str);
 
 	tx_sock_parms.mc_ttl = 1;
 	tx_sock_parms.mc_loop = 1;
 	//inet_pton(AF_INET, "1.1.1.1", &tx_sock_parms.out_intf_addr);
 	tx_sock_parms.out_intf_addr.s_addr = INADDR_ANY; /* use route table */
 
+/*
 	memset(&inet_mc_dests[0], 0, sizeof(inet_mc_dests[0]));
 	inet_mc_dests[0].sin_family = AF_INET;
 	inet_pton(AF_INET, "224.5.5.5", &inet_mc_dests[0].sin_addr);
@@ -208,14 +222,13 @@ int main(int argc, char *argv[])
 	inet_mc_dests[2].sin_family = AF_INET;
 	inet_pton(AF_INET, "224.7.7.7", &inet_mc_dests[2].sin_addr);
 	inet_mc_dests[2].sin_port = htons(1234);
+*/
 
 	tx_sock_parms.mc_dests = inet_mc_dests;
-	tx_sock_parms.mc_dests_num = 3;
+	tx_sock_parms.mc_dests_num = ap_pton_inet_csv_ret;
 	
-/*
 	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
 		tx_sock_parms);
-*/
 
 	printf("argv[1] = %s\n", argv[1]);
 	ret = aip_ptoh_inet6(argv[1], &rx6_sock_parms.mc_group,
