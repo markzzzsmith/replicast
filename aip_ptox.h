@@ -1,6 +1,6 @@
 /*
- * aip_ptoh - convert address, interface and port strings from presentation to
- * host native format.
+ * aip_ptox - convert address, interface and port strings from presentation to
+ * different formats e.g. host or network
  * 
  * formats supported -
  *
@@ -9,8 +9,8 @@
  *	inet6 - e.g. [ff02::1%eth0]:80
  *
  */
-#ifndef __AIP_PTOH_H
-#define __AIP_PTOH_H
+#ifndef __AIP_PTOX_H
+#define __AIP_PTOX_H
 
 
 #include <net/if.h>
@@ -26,10 +26,10 @@ enum {
 };
 
 enum aip_ptoh_errors {
-	AIP_PTOH_ERR_NO_ERROR,
-	AIP_PTOH_ERR_BAD_ADDR,
-	AIP_PTOH_ERR_BAD_IF_ADDR,
-	AIP_PTOH_ERR_BAD_PORT,
+	AIP_PTOX_ERR_NO_ERROR,
+	AIP_PTOX_ERR_BAD_ADDR,
+	AIP_PTOX_ERR_BAD_IF_ADDR,
+	AIP_PTOX_ERR_BAD_PORT,
 };
 
 
@@ -52,4 +52,4 @@ int aip_ptoh_inet6(const char *aip_str,
 		   enum aip_ptoh_errors *aip_ptoh_err);
 
 
-#endif /* __AIP_PTOH_H */
+#endif /* __AIP_PTOX_H */

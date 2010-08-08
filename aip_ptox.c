@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#include "aip_ptoh.h"
+#include "aip_ptox.h"
 
 
 int aip_ptoh_inet(const char *aip_str,
@@ -38,7 +38,7 @@ int aip_ptoh_inet(const char *aip_str,
 	if_addr->s_addr = INADDR_NONE;
 	*port = 0;
 	if (aip_ptoh_err != NULL) {
-		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
+		*aip_ptoh_err = AIP_PTOX_ERR_NO_ERROR;
 	}
 
 	strncpy(str, aip_str, AIP_STR_INET_MAX_LEN);
@@ -68,7 +68,7 @@ int aip_ptoh_inet(const char *aip_str,
 
 	if (inet_pton(AF_INET, addr_str, addr) != 1) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
+			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
 		}
 		return -1;
 	}
@@ -76,7 +76,7 @@ int aip_ptoh_inet(const char *aip_str,
 	if ((if_addr_str != NULL) &&
 			(inet_pton(AF_INET, if_addr_str, if_addr) != 1)) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_BAD_IF_ADDR;
+			*aip_ptoh_err = AIP_PTOX_ERR_BAD_IF_ADDR;
 		}
 		return -1;
 	}
@@ -85,7 +85,7 @@ int aip_ptoh_inet(const char *aip_str,
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
+				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
 			}
 			*port = 0;
 			return -1;
@@ -191,7 +191,7 @@ int aip_ptoh_inet6(const char *aip_str,
 	*ifidx = 0;
 	*port = 0;
 	if (aip_ptoh_err != NULL) {
-		*aip_ptoh_err = AIP_PTOH_ERR_NO_ERROR;
+		*aip_ptoh_err = AIP_PTOX_ERR_NO_ERROR;
 	}
 
 	strncpy(str, aip_str, AIP_STR_INET6_MAX_LEN);
@@ -199,7 +199,7 @@ int aip_ptoh_inet6(const char *aip_str,
 
 	if (str[0] != '[') {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
+			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
 		}
 		return -1;
 	}
@@ -222,7 +222,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		s++;
 		if (*s != ':') {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
+				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
 			}
 			return -1;
 		}	
@@ -234,7 +234,7 @@ int aip_ptoh_inet6(const char *aip_str,
 
 	if (inet_pton(AF_INET6, addr_str, addr) != 1) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOH_ERR_BAD_ADDR;
+			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
 		}
 		return -1;
 	}
@@ -247,7 +247,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOH_ERR_BAD_PORT;
+				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
 			}
 			*port = 0;
 			return -1;

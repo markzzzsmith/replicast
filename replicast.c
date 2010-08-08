@@ -17,7 +17,7 @@
 
 #include "global.h"
 #include "log.h"
-#include "aip_ptoh.h"
+#include "aip_ptox.h"
 
 
 struct inet_rx_mc_sock_params {
