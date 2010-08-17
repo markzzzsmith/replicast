@@ -81,6 +81,11 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   struct program_parameters *prog_parms,
 				   enum PARAM_ERRORS **parm_error);
 
+void init_prog_parms(struct program_parameters *prog_parms);
+
+void get_prog_parms_cmdline(int argc, char *argv[],
+			    struct program_parameters *prog_parms);
+
 int str_to_inet(const int af,
 		const char *str,
 		struct in_addr *addr,
@@ -296,9 +301,51 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   enum PARAM_ERRORS **parm_error)
 {
 
+	init_prog_parms(prog_parms);
+
+	get_prog_parms_cmdline(argc, argv, prog_parms);
 
 	*parm_error = PRMERR_NO_ERROR;
 	return RCMODE_ERROR;
+
+}
+
+
+void init_prog_parms(struct program_parameters *prog_parms)
+{
+
+
+	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
+	prog_parms->inet_rx_sock_parms.port = 0;
+	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = INADDR_NONE;
+
+	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
+	prog_parms->inet_tx_sock_parms.mc_loop = 0;
+	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = INADDR_NONE;
+	prog_parms->inet_tx_sock_parms.mc_dests = NULL;
+	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
+
+	memcpy(&prog_parms->inet6_rx_sock_parms.mc_group, &in6addr_any,
+		sizeof(in6addr_any));
+	prog_parms->inet6_rx_sock_parms.port = 0;
+	prog_parms->inet6_rx_sock_parms.in_intf_idx = 0;
+	
+	prog_parms->inet6_tx_sock_parms.mc_hops = 1;
+	prog_parms->inet6_tx_sock_parms.mc_loop = 0;
+	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
+	prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
+	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
+
+}
+
+
+void get_prog_parms_cmdline(int argc, char *argv[],
+			    struct program_parameters *prog_parms)
+{
+
+
+
+
 
 }
 

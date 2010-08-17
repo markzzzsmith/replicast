@@ -167,7 +167,8 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 			more_aip_str = 1;
 		}
 
-	} while (more_aip_str);
+	} while (more_aip_str &&
+		((sa_list_len < max_sa_list_len ) || (max_sa_list_len == 0)));
 
 	return sa_list_len;
 
