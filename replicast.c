@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -342,6 +343,25 @@ void init_prog_parms(struct program_parameters *prog_parms)
 void get_prog_parms_cmdline(int argc, char *argv[],
 			    struct program_parameters *prog_parms)
 {
+	enum CMDLINE_OPTS {
+		CMDLINE_OPT_HELP = 1,
+		CMDLINE_OPT_4SG,
+		CMDLINE_OPT_4TTL,
+		CMDLINE_OPT_4LOOP,
+		CMDLINE_OPT_4OUTF,
+		CMDLINE_OPT_4DGS,
+		CMDLINE_OPT_6SG,
+	};
+	struct option cmdline_opts[] = {
+		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
+		{"4sg", required_argument, NULL, CMDLINE_OPT_4SG},
+		{"4ttl", required_argument, NULL, CMDLINE_OPT_4TTL},
+		{"4loop", required_argument, NULL, CMDLINE_OPT_4LOOP},
+		{"4outf", requited_argument, NULL, CMDLINE_OPT_4OUTF},
+		{"4dgs", required_argument, NULL, CMDLINE_OPT_4DGS},
+		{"6sg", required_argument, NULL, CMDLINE_OPT_6SG},
+		{0, 0, 0, 0}
+	};
 
 
 
