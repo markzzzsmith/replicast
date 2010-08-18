@@ -51,9 +51,26 @@ struct inet6_tx_mc_sock_params {
 
 
 struct program_parameters {
+	unsigned int inet_rx_sock_parms_set;
+	unsigned int inet_rx_sock_mcgroup_set;
+	unsigned int inet_rx_sock_port_set;
+	unsigned int inet_rx_sock_in_intf_addr_set;
 	struct inet_rx_mc_sock_params inet_rx_sock_parms;
+	unsigned int inet_tx_sock_parms_set;
+	unsigned int inet_tx_sock_mc_ttl_set;
+	unsigned int inet_tx_sock_out_intf_addr_set;
+	unsigned int inet_tx_sock_mc_dests_set;
 	struct inet_tx_mc_sock_params inet_tx_sock_parms;
+	unsigned int inet6_rx_sock_parms_set;
+	unsigned int inet6_rx_sock_mcgroup_set;
+	unsigned int inet6_rx_sock_port_set;
+	unsigned int inet6_rx_sock_in_intf_idx_set;
 	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
+	unsigned int inet6_tx_mc_sock_parms_set;
+	unsigned int inet6_tx_mc_sock_mc_hops_set;
+	unsigned int inet6_tx_mc_sock_mc_loop_set;
+	unsigned int inet6_tx_mc_sock_out_intf_idx_set;
+	unsigned int inet6_tx_mc_sock_mc_dests_set;
 	struct inet6_tx_mc_sock_params inet6_tx_sock_parms;
 };
 
@@ -316,9 +333,20 @@ void init_prog_parms(struct program_parameters *prog_parms)
 {
 
 
+	prog_parms->inet_rx_sock_parms_set = 0;
+	prog_parms->inet_rx_sock_mcgroup_set = 0;
+	prog_parms->inet_rx_sock_port_set = 0;
+	prog_parms->inet_rx_sock_in_intf_addr_set = 0;
+
 	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
 	prog_parms->inet_rx_sock_parms.port = 0;
 	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = INADDR_NONE;
+
+
+	prog_parms->inet_tx_sock_parms_set = 0;
+	prog_parms->inet_tx_sock_mc_ttl_set = 0;
+	prog_parms->inet_tx_sock_out_intf_addr_set = 0;
+	prog_parms->inet_tx_sock_mc_dests_set = 0;
 
 	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
 	prog_parms->inet_tx_sock_parms.mc_loop = 0;
@@ -326,16 +354,31 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
 
+
+	prog_parms->inet6_rx_sock_parms_set = 0;
+	prog_parms->inet6_rx_sock_mcgroup_set = 0;
+	prog_parms->inet6_rx_sock_port_set = 0;
+	prog_parms->inet6_rx_sock_in_intf_idx_set = 0;
+
 	memcpy(&prog_parms->inet6_rx_sock_parms.mc_group, &in6addr_any,
 		sizeof(in6addr_any));
 	prog_parms->inet6_rx_sock_parms.port = 0;
 	prog_parms->inet6_rx_sock_parms.in_intf_idx = 0;
+
+
+	prog_parms->inet6_tx_mc_sock_parms_set = 0;
+	prog_parms->inet6_tx_mc_sock_mc_hops_set = 0;
+	prog_parms->inet6_tx_mc_sock_mc_loop_set = 0;
+	prog_parms->inet6_tx_mc_sock_out_intf_idx_set = 0;
+	prog_parms->inet6_tx_mc_sock_mc_dests_set = 0;
 	
 	prog_parms->inet6_tx_sock_parms.mc_hops = 1;
 	prog_parms->inet6_tx_sock_parms.mc_loop = 0;
 	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
 	prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
+
+
 
 }
 
@@ -345,21 +388,29 @@ void get_prog_parms_cmdline(int argc, char *argv[],
 {
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
-		CMDLINE_OPT_4SG,
+		CMDLINE_OPT_4SRCGRP,
 		CMDLINE_OPT_4TTL,
 		CMDLINE_OPT_4LOOP,
-		CMDLINE_OPT_4OUTF,
-		CMDLINE_OPT_4DGS,
-		CMDLINE_OPT_6SG,
+		CMDLINE_OPT_4OUTIF,
+		CMDLINE_OPT_4DSTGRPS,
+		CMDLINE_OPT_6SRCGRP,
+		CMDLINE_OPT_6HOPS,
+		CMDLINE_OPT_6LOOP,
+		CMDLINE_OPT_6OUTIF,
+		CMDLINE_OPT_6DSTGRPS,
 	};
 	struct option cmdline_opts[] = {
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
-		{"4sg", required_argument, NULL, CMDLINE_OPT_4SG},
+		{"4srcgrp", required_argument, NULL, CMDLINE_OPT_4SRCGRP},
 		{"4ttl", required_argument, NULL, CMDLINE_OPT_4TTL},
-		{"4loop", required_argument, NULL, CMDLINE_OPT_4LOOP},
-		{"4outf", requited_argument, NULL, CMDLINE_OPT_4OUTF},
-		{"4dgs", required_argument, NULL, CMDLINE_OPT_4DGS},
-		{"6sg", required_argument, NULL, CMDLINE_OPT_6SG},
+		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
+		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
+		{"4dstgrps", required_argument, NULL, CMDLINE_OPT_4DSTGRPS},
+		{"6srcgrp", required_argument, NULL, CMDLINE_OPT_6SRCGRP},
+		{"6hops", required_argument, NULL, CMDLINE_OPT_6HOPS},
+		{"6loop", no_argument, NULL, CMDLINE_OPT_6LOOP},
+		{"6outif", required_argument, NULL, CMDLINE_OPT_6OUTIF},
+		{"6dstgrps", required_argument, NULL, CMDLINE_OPT_6DSTGRPS},
 		{0, 0, 0, 0}
 	};
 
