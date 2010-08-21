@@ -50,27 +50,42 @@ struct inet6_tx_mc_sock_params {
 };
 
 
-struct program_parameters {
-	unsigned int inet_rx_sock_parms_set;
+struct program_options {
+	unsigned int help_set;
+	unsigned int unknown_opt_set;
+
+	unsigned int inet_rx_sock_opts_set;
 	unsigned int inet_rx_sock_mcgroup_set;
-	unsigned int inet_rx_sock_port_set;
-	unsigned int inet_rx_sock_in_intf_addr_set;
-	struct inet_rx_mc_sock_params inet_rx_sock_parms;
-	unsigned int inet_tx_sock_parms_set;
+	char *inet_rx_sock_mcgroup_str;
+
+	unsigned int inet_tx_sock_opts_set;
 	unsigned int inet_tx_sock_mc_ttl_set;
-	unsigned int inet_tx_sock_out_intf_addr_set;
+	char *inet_tx_sock_mc_ttl_str;
+	unsigned int inet_tx_sock_mc_loop_set;
+	unsigned int inet_tx_sock_out_intf_set;
+	char *inet_tx_sock_out_intf_str;
 	unsigned int inet_tx_sock_mc_dests_set;
-	struct inet_tx_mc_sock_params inet_tx_sock_parms;
-	unsigned int inet6_rx_sock_parms_set;
+	char *inet_tx_sock_mc_dests_str;
+
+	unsigned int inet6_rx_sock_opts_set;
 	unsigned int inet6_rx_sock_mcgroup_set;
-	unsigned int inet6_rx_sock_port_set;
-	unsigned int inet6_rx_sock_in_intf_idx_set;
-	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
-	unsigned int inet6_tx_mc_sock_parms_set;
+	char *inet6_rx_sock_mcgroup_str;
+
+	unsigned int inet6_tx_mc_sock_opts_set;
 	unsigned int inet6_tx_mc_sock_mc_hops_set;
+	char *inet6_tx_mc_sock_mc_hops_str;
 	unsigned int inet6_tx_mc_sock_mc_loop_set;
-	unsigned int inet6_tx_mc_sock_out_intf_idx_set;
+	unsigned int inet6_tx_mc_sock_out_intf_set;
+	char *inet6_tx_mc_sock_out_intf_str;
 	unsigned int inet6_tx_mc_sock_mc_dests_set;
+	char *inet6_tx_mc_sock_mc_dests_str;
+};
+
+
+struct program_parameters {
+	struct inet_rx_mc_sock_params inet_rx_sock_parms;
+	struct inet_tx_mc_sock_params inet_tx_sock_parms;
+	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
 	struct inet6_tx_mc_sock_params inet6_tx_sock_parms;
 };
 
@@ -96,13 +111,16 @@ enum REPLICAST_MODE {
 
 
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
+				   struct program_options *prog_opts,
 				   struct program_parameters *prog_parms,
 				   enum PARAM_ERRORS **parm_error);
 
+void init_prog_opts(struct program_options *prog_opts);
+
 void init_prog_parms(struct program_parameters *prog_parms);
 
-void get_prog_parms_cmdline(int argc, char *argv[],
-			    struct program_parameters *prog_parms);
+void get_prog_opts_cmdline(int argc, char *argv[],
+			   struct program_options *prog_opts);
 
 int str_to_inet(const int af,
 		const char *str,
@@ -315,13 +333,15 @@ int main(int argc, char *argv[])
 
 
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
+				   struct program_options *prog_opts,
 				   struct program_parameters *prog_parms,
 				   enum PARAM_ERRORS **parm_error)
 {
 
-	init_prog_parms(prog_parms);
+	init_prog_opts(prog_opts);
+	get_prog_opts_cmdline(argc, argv, prog_opts);
 
-	get_prog_parms_cmdline(argc, argv, prog_parms);
+	init_prog_parms(prog_parms);
 
 	*parm_error = PRMERR_NO_ERROR;
 	return RCMODE_ERROR;
@@ -329,24 +349,48 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 }
 
 
+void init_prog_opts(struct program_options *prog_opts)
+{
+
+
+	prog_opts->help_set = 0;
+	prog_opts->unknown_opt_set = 0;
+
+	prog_opts->inet_rx_sock_opts_set = 0;
+	prog_opts->inet_rx_sock_mcgroup_set = 0;
+	prog_opts->inet_rx_sock_mcgroup_str = NULL;
+
+	prog_opts->inet_tx_sock_opts_set = 0;
+	prog_opts->inet_tx_sock_mc_ttl_set = 0;
+	prog_opts->inet_tx_sock_mc_ttl_str = NULL;
+	prog_opts->inet_tx_sock_out_intf_set = 0;
+	prog_opts->inet_tx_sock_out_intf_str = NULL;
+	prog_opts->inet_tx_sock_mc_dests_set = 0;
+	prog_opts->inet_tx_sock_mc_dests_str = NULL;
+
+	prog_opts->inet6_rx_sock_opts_set = 0;
+	prog_opts->inet6_rx_sock_mcgroup_set = 0;
+	prog_opts->inet6_rx_sock_mcgroup_str = NULL;
+
+	prog_opts->inet6_tx_mc_sock_opts_set = 0;
+	prog_opts->inet6_tx_mc_sock_mc_hops_set = 0;
+	prog_opts->inet6_tx_mc_sock_mc_hops_str = NULL;
+	prog_opts->inet6_tx_mc_sock_mc_loop_set = 0;
+	prog_opts->inet6_tx_mc_sock_out_intf_set = 0;
+	prog_opts->inet6_tx_mc_sock_out_intf_str = NULL;
+	prog_opts->inet6_tx_mc_sock_mc_dests_set = 0;
+	prog_opts->inet6_tx_mc_sock_mc_dests_str = NULL;
+	
+}
+
+
 void init_prog_parms(struct program_parameters *prog_parms)
 {
 
 
-	prog_parms->inet_rx_sock_parms_set = 0;
-	prog_parms->inet_rx_sock_mcgroup_set = 0;
-	prog_parms->inet_rx_sock_port_set = 0;
-	prog_parms->inet_rx_sock_in_intf_addr_set = 0;
-
 	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
 	prog_parms->inet_rx_sock_parms.port = 0;
 	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = INADDR_NONE;
-
-
-	prog_parms->inet_tx_sock_parms_set = 0;
-	prog_parms->inet_tx_sock_mc_ttl_set = 0;
-	prog_parms->inet_tx_sock_out_intf_addr_set = 0;
-	prog_parms->inet_tx_sock_mc_dests_set = 0;
 
 	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
 	prog_parms->inet_tx_sock_parms.mc_loop = 0;
@@ -354,37 +398,22 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
 
-
-	prog_parms->inet6_rx_sock_parms_set = 0;
-	prog_parms->inet6_rx_sock_mcgroup_set = 0;
-	prog_parms->inet6_rx_sock_port_set = 0;
-	prog_parms->inet6_rx_sock_in_intf_idx_set = 0;
-
 	memcpy(&prog_parms->inet6_rx_sock_parms.mc_group, &in6addr_any,
 		sizeof(in6addr_any));
 	prog_parms->inet6_rx_sock_parms.port = 0;
 	prog_parms->inet6_rx_sock_parms.in_intf_idx = 0;
 
-
-	prog_parms->inet6_tx_mc_sock_parms_set = 0;
-	prog_parms->inet6_tx_mc_sock_mc_hops_set = 0;
-	prog_parms->inet6_tx_mc_sock_mc_loop_set = 0;
-	prog_parms->inet6_tx_mc_sock_out_intf_idx_set = 0;
-	prog_parms->inet6_tx_mc_sock_mc_dests_set = 0;
-	
 	prog_parms->inet6_tx_sock_parms.mc_hops = 1;
 	prog_parms->inet6_tx_sock_parms.mc_loop = 0;
 	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
 	prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
 
-
-
 }
 
 
-void get_prog_parms_cmdline(int argc, char *argv[],
-			    struct program_parameters *prog_parms)
+void get_prog_opts_cmdline(int argc, char *argv[],
+			   struct program_options *prog_opts)
 {
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
@@ -413,10 +442,71 @@ void get_prog_parms_cmdline(int argc, char *argv[],
 		{"6dstgrps", required_argument, NULL, CMDLINE_OPT_6DSTGRPS},
 		{0, 0, 0, 0}
 	};
+	enum CMDLINE_OPTS ret;
 
 
+	ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
+	while ((ret != -1) && (!prog_opts->help_set) &&
+						(!prog_opts->unknown_opt_set)) {
+		switch (ret) {
+		case CMDLINE_OPT_HELP:
+			prog_opts->help_set = 1;
+			break;
+		case CMDLINE_OPT_4SRCGRP:
+			prog_opts->inet_rx_sock_opts_set = 1;
+			prog_opts->inet_rx_sock_mcgroup_set = 1;
+			prog_opts->inet_rx_sock_mcgroup_str = optarg;
+			break;
+		case CMDLINE_OPT_4TTL:
+			prog_opts->inet_tx_sock_opts_set = 1;
+			prog_opts->inet_tx_sock_mc_ttl_set = 1;
+			prog_opts->inet_tx_sock_mc_ttl_str = optarg;
+			break;
+		case CMDLINE_OPT_4LOOP:
+			prog_opts->inet_tx_sock_opts_set = 1;
+			prog_opts->inet_tx_sock_mc_loop_set = 1;
+			break;
+		case CMDLINE_OPT_4OUTIF:
+			prog_opts->inet_tx_sock_opts_set = 1;
+			prog_opts->inet_tx_sock_out_intf_set = 1;
+			prog_opts->inet_tx_sock_out_intf_str = optarg;
+			break;
+		case CMDLINE_OPT_4DSTGRPS:
+			prog_opts->inet_tx_sock_opts_set = 1;
+			prog_opts->inet_tx_sock_mc_dests_set = 1;
+			prog_opts->inet_tx_sock_mc_dests_str = optarg;
+			break;
+		case CMDLINE_OPT_6SRCGRP:
+			prog_opts->inet6_rx_sock_opts_set = 1;
+			prog_opts->inet6_rx_sock_mcgroup_set = 1;
+			prog_opts->inet6_rx_sock_mcgroup_str = optarg;
+			break;
+		case CMDLINE_OPT_6HOPS:
+			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			prog_opts->inet6_tx_mc_sock_mc_hops_set = 1;
+			prog_opts->inet6_tx_mc_sock_mc_hops_str = optarg;
+			break;
+		case CMDLINE_OPT_6LOOP:
+			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			prog_opts->inet6_tx_mc_sock_mc_loop_set = 1;
+			break;
+		case CMDLINE_OPT_6OUTIF:
+			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			prog_opts->inet6_tx_mc_sock_out_intf_set = 1;
+			prog_opts->inet6_tx_mc_sock_out_intf_str = optarg;
+			break;
+		case CMDLINE_OPT_6DSTGRPS:
+			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			prog_opts->inet6_tx_mc_sock_mc_dests_set = 1;
+			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
+			break;
+		default:
+			prog_opts->unknown_opt_set = 1;
+			break;
+		}
 
-
+		ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
+	}
 
 }
 
