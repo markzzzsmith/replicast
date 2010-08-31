@@ -13,12 +13,43 @@
 #include <unistd.h>
 
 #include <arpa/inet.h>
+#include <net/if.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
 #include "global.h"
 #include "log.h"
 #include "aip_ptox.h"
+
+
+enum GLOBAL_DEFS {
+	PKT_BUF_SIZE = 0xffff,
+};
+
+enum VALIDATE_OPTS_RESULT {
+	VOR_HELP,
+	VOR_ERR_UNKNOWN_OPT,
+	VOR_ERR_UNKNOWN_ERR,
+	VOR_ERR_INETINET6_SRC_OPTS_SET,
+	VOR_ERR_NO_SRC_GRP,
+	VOR_ERR_BAD_ADDR,
+	VOR_ERR_BAD_IF_ADDR,
+	VOR_ERR_BAD_PORT,
+	VOR_ERR_TX_TTL_OUT_OF_RANGE,
+	VOR_ERR_TX_HOPS_OUT_OF_RANGE,
+};
+
+enum REPLICAST_MODE {
+	RCMODE_HELP,
+	RCMODE_ERROR,
+	RCMODE_INET_TO_INET,
+	RCMODE_INET_TO_INET6,
+	RCMODE_INET_TO_INET_INET6,
+	RCMODE_INET6_TO_INET6,
+	RCMODE_INET6_TO_INET,
+	RCMODE_INET6_TO_INET_INET6,
+};
+
 
 
 struct inet_rx_mc_sock_params {
@@ -53,6 +84,7 @@ struct inet6_tx_mc_sock_params {
 struct program_options {
 	unsigned int help_set;
 	unsigned int unknown_opt_set;
+	char *unknown_opt_str;
 
 	unsigned int inet_rx_sock_opts_set;
 	unsigned int inet_rx_sock_mcgroup_set;
@@ -89,31 +121,12 @@ struct program_parameters {
 	struct inet6_tx_mc_sock_params inet6_tx_sock_parms;
 };
 
-enum GLOBAL_DEFS {
-	PKT_BUF_SIZE = 0xffff,
-};
-
-
-enum PARAM_ERRORS {
-	PRMERR_NO_ERROR,
-	PRMERR_NO_PARAMS,
-};
-
-enum REPLICAST_MODE {
-	RCMODE_ERROR,
-	RCMODE_INET_TO_INET,
-	RCMODE_INET_TO_INET6,
-	RCMODE_INET_TO_INET_INET6,
-	RCMODE_INET6_TO_INET6,
-	RCMODE_INET6_TO_INET,
-	RCMODE_INET6_TO_INET_INET6,
-};
-
 
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   struct program_options *prog_opts,
 				   struct program_parameters *prog_parms,
-				   enum PARAM_ERRORS **parm_error);
+				   char err_str[],
+				   const unsigned int err_str_size);
 
 void init_prog_opts(struct program_options *prog_opts);
 
@@ -122,13 +135,10 @@ void init_prog_parms(struct program_parameters *prog_parms);
 void get_prog_opts_cmdline(int argc, char *argv[],
 			   struct program_options *prog_opts);
 
-int str_to_inet(const int af,
-		const char *str,
-		struct in_addr *addr,
-		unsigned int *port,
-		char *intf,
-		const unsigned int intf_len);
-		
+enum VALIDATE_OPTS_RESULT validate_prog_opts(
+				const struct program_options *prog_opts,
+				struct program_parameters *prog_parms);	
+
 
 void close_sockets(void);
 
@@ -220,7 +230,6 @@ int main(int argc, char *argv[])
 	struct inet6_rx_mc_sock_params rx6_sock_parms;
 	struct inet6_tx_mc_sock_params tx6_sock_parms;
 	struct sockaddr_in6 inet6_mc_dests[3];
-	char out_if[30];
 	char ap_err_str[AIP_STR_INET_MAX_LEN + 1];
 	int ap_pton_inet_csv_ret;
 	int ret;
@@ -335,7 +344,8 @@ int main(int argc, char *argv[])
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   struct program_options *prog_opts,
 				   struct program_parameters *prog_parms,
-				   enum PARAM_ERRORS **parm_error)
+				   char err_str[],
+				   const unsigned int err_str_size)
 {
 
 	init_prog_opts(prog_opts);
@@ -343,7 +353,6 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 
 	init_prog_parms(prog_parms);
 
-	*parm_error = PRMERR_NO_ERROR;
 	return RCMODE_ERROR;
 
 }
@@ -354,7 +363,9 @@ void init_prog_opts(struct program_options *prog_opts)
 
 
 	prog_opts->help_set = 0;
+
 	prog_opts->unknown_opt_set = 0;
+	prog_opts->unknown_opt_str = NULL;
 
 	prog_opts->inet_rx_sock_opts_set = 0;
 	prog_opts->inet_rx_sock_mcgroup_set = 0;
@@ -502,11 +513,137 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			break;
 		default:
 			prog_opts->unknown_opt_set = 1;
+			prog_opts->unknown_opt_str = optarg;
 			break;
 		}
 
 		ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
 	}
+
+}
+
+
+enum VALIDATE_OPTS_RESULT validate_prog_opts(
+				const struct program_options *prog_opts,
+				struct program_parameters *prog_parms)
+{
+	int ret;
+	unsigned int udp_port;
+	enum aip_ptoh_errors aip_ptoh_err;
+	int tx_ttl;
+	int tx_hops;
+
+	
+	if (prog_opts->help_set) {
+		return VOR_HELP;
+	}
+	
+	if (prog_opts->unknown_opt_set) {
+		return VOR_ERR_UNKNOWN_OPT;
+	}
+
+	if (prog_opts->inet_rx_sock_opts_set &&
+					prog_opts->inet6_rx_sock_opts_set) {
+		return VOR_ERR_INETINET6_SRC_OPTS_SET;
+	}
+
+	if (!prog_opts->inet_rx_sock_mcgroup_set &&
+				!prog_opts->inet6_rx_sock_mcgroup_set) {
+		return VOR_ERR_NO_SRC_GRP;
+	}
+
+	if (prog_opts->inet_rx_sock_mcgroup_set) {
+		ret = aip_ptoh_inet(prog_opts->inet_rx_sock_mcgroup_str,
+			&prog_parms->inet_rx_sock_parms.mc_group,
+			&prog_parms->inet_rx_sock_parms.in_intf_addr,
+			&udp_port,
+			&aip_ptoh_err);
+		if (ret == -1) {
+			switch (aip_ptoh_err) {
+			case AIP_PTOX_ERR_BAD_ADDR:
+				return VOR_ERR_BAD_ADDR;
+				break;
+			case AIP_PTOX_ERR_BAD_IF_ADDR:
+				return VOR_ERR_BAD_IF_ADDR;
+				break;
+			case AIP_PTOX_ERR_BAD_PORT:
+				return VOR_ERR_BAD_PORT;
+				break;
+			default:
+				return VOR_ERR_UNKNOWN_ERR;
+				break;
+			}
+		} else {
+			prog_parms->inet_rx_sock_parms.port = htons(udp_port);
+		}
+	} else if (prog_opts->inet6_rx_sock_mcgroup_set) {
+		ret = aip_ptoh_inet6(prog_opts->inet6_rx_sock_mcgroup_str,
+			&prog_parms->inet6_rx_sock_parms.mc_group,
+			&prog_parms->inet6_rx_sock_parms.in_intf_idx,
+			&udp_port,
+			&aip_ptoh_err);
+		if (ret == -1) {
+			switch (aip_ptoh_err) {
+			case AIP_PTOX_ERR_BAD_ADDR:
+				return VOR_ERR_BAD_ADDR;
+				break;
+			case AIP_PTOX_ERR_BAD_PORT:
+				return VOR_ERR_BAD_PORT;
+				break;
+			default:
+				return VOR_ERR_UNKNOWN_ERR;
+				break;
+			}
+		} else {
+			prog_parms->inet6_rx_sock_parms.port = htons(udp_port);
+		}
+	}
+
+	if (prog_opts->inet_tx_sock_opts_set) {
+
+		if (prog_opts->inet_tx_sock_mc_ttl_set) {
+			tx_ttl = atoi(prog_opts->inet_tx_sock_mc_ttl_str);
+			if ((tx_ttl < 0) || (tx_ttl > 255)) {
+				return VOR_ERR_TX_TTL_OUT_OF_RANGE;
+			} else {
+				prog_parms->inet_tx_sock_parms.mc_ttl =
+									tx_ttl;
+			}
+		}
+
+		if (prog_opts->inet_tx_sock_mc_loop_set) {
+			prog_parms->inet_tx_sock_parms.mc_loop = 1;
+		}
+
+		if (prog_opts->inet_tx_sock_out_intf_set) {
+			
+		}
+	}
+
+	if (prog_opts->inet6_tx_mc_sock_opts_set) {
+
+		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
+			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
+			if ((tx_hops < 0) || (tx_ttl)) {
+				return VOR_ERR_TX_HOPS_OUT_OF_RANGE;
+			} else {
+				prog_parms->inet6_tx_sock_parms.mc_hops =
+								tx_hops;
+			}
+		}
+
+		if (prog_opts->inet6_tx_mc_sock_mc_loop_set) {
+			prog_parms->inet6_tx_sock_parms.mc_loop = 1;
+		}
+
+		if (prog_opts->inet6_tx_mc_sock_out_intf_set) {
+			prog_parms->inet6_tx_sock_parms.out_intf_idx =
+				if_nametoindex(prog_opts->
+					inet6_tx_mc_sock_out_intf_str);
+		}
+
+	}
+
 
 }
 

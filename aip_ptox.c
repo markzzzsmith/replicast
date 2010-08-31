@@ -14,11 +14,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <sys/ioctl.h>
 
 #include "aip_ptox.h"
+
+
+static int get_if_addr(const char *ifname, struct in_addr *addr);
 
 
 int aip_ptoh_inet(const char *aip_str,
@@ -56,7 +61,7 @@ int aip_ptoh_inet(const char *aip_str,
 		if_addr_str = NULL;
 	}
 
-	s = strchr(s, ':');
+	s = strrchr(s, ':');
 	if (s != NULL) {
 		*s = '\0';
 		s++;
@@ -74,7 +79,7 @@ int aip_ptoh_inet(const char *aip_str,
 	}
 
 	if ((if_addr_str != NULL) &&
-			(inet_pton(AF_INET, if_addr_str, if_addr) != 1)) {
+				 (inet_if_addr(if_addr_str, if_addr) == -1)) {
 		if (aip_ptoh_err != NULL) {
 			*aip_ptoh_err = AIP_PTOX_ERR_BAD_IF_ADDR;
 		}
@@ -259,3 +264,64 @@ int aip_ptoh_inet6(const char *aip_str,
 
 }
 
+
+int inet_if_addr(const char *str,
+                 struct in_addr *if_addr)
+{
+	int ret;
+
+
+	ret = inet_pton(AF_INET, str, if_addr);
+
+	if (ret == 1) {
+		return 0;
+	}
+
+	ret = get_if_addr(str, if_addr);
+
+	if (ret == 0) {
+		return 0;
+	} else {
+		return -1;
+	}
+
+}
+
+
+static int get_if_addr(const char *ifname, struct in_addr *addr)
+{
+	int sock_fd;
+	struct ifreq ifr;
+	int ioctl_ret;
+	struct sockaddr_in *sa_in = NULL;
+
+
+	addr->s_addr = INADDR_NONE;
+
+	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock_fd == -1) {
+		return -1;
+	}
+
+	memset(&ifr, 0, sizeof(ifr));
+
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ-1] = '\0';	
+
+	ioctl_ret = ioctl(sock_fd, SIOCGIFADDR, &ifr);
+
+	if (close(sock_fd) == -1) {
+		return -1;
+	}
+
+	if (ioctl_ret == -1) {
+		return -1;
+	}
+
+	sa_in = (struct sockaddr_in *)&ifr.ifr_addr;
+
+	memcpy(&addr->s_addr, &sa_in->sin_addr, sizeof(in_addr_t));
+
+	return 0;
+
+}

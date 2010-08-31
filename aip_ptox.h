@@ -51,5 +51,8 @@ int aip_ptoh_inet6(const char *aip_str,
 		   unsigned int *port,
 		   enum aip_ptoh_errors *aip_ptoh_err);
 
+int inet_if_addr(const char *str,
+		 struct in_addr *if_addr);
+
 
 #endif /* __AIP_PTOX_H */
