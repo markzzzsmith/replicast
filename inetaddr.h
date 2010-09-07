@@ -9,8 +9,8 @@
  *	inet6 - e.g. [ff02::1%eth0]:80
  *
  */
-#ifndef __AIP_PTOX_H
-#define __AIP_PTOX_H
+#ifndef __INETADDR_H
+#define __INETADDR_H
 
 
 #include <net/if.h>
@@ -55,4 +55,4 @@ int inet_if_addr(const char *str,
 		 struct in_addr *if_addr);
 
 
-#endif /* __AIP_PTOX_H */
+#endif /* __INETADDR_H */

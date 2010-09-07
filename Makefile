@@ -5,14 +5,14 @@ CFLAGS_DEBUG =
 
 CFLAGS = -Wall $(CFLAGS_DEBUG)
 
-replicast : log aip_ptox global.h replicast.c
-	$(CC) $(CFLAGS) replicast.c -o replicast log.o aip_ptox.o
+replicast : log inetaddr global.h replicast.c
+	$(CC) $(CFLAGS) replicast.c -o replicast log.o inetaddr.o
 
 log : log.h log.c
 	$(CC) $(CFLAGS) -c log.c -o log.o
 
-aip_ptox : aip_ptox.h aip_ptox.c
-	$(CC) $(CFLAGS) -c aip_ptox.c -o aip_ptox.o
+inetaddr : inetaddr.h inetaddr.c
+	$(CC) $(CFLAGS) -c inetaddr.c -o inetaddr.o
 
 clean :
-	rm -f replicast log.o aip_ptox.o
+	rm -f replicast log.o inetaddr.o

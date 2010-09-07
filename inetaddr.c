@@ -1,5 +1,5 @@
 /*
- * aip_ptoh - convert address, interface and port strings from presentation to
+ * inetaddr - convert address, interface and port strings from presentation to
  * host native format.
  * 
  * formats supported -
@@ -20,7 +20,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 
-#include "aip_ptox.h"
+#include "inetaddr.h"
 
 
 static int get_if_addr(const char *ifname, struct in_addr *addr);

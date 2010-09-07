@@ -19,7 +19,7 @@
 
 #include "global.h"
 #include "log.h"
-#include "aip_ptox.h"
+#include "inetaddr.h"
 
 
 enum GLOBAL_DEFS {
@@ -30,13 +30,15 @@ enum VALIDATE_OPTS_RESULT {
 	VOR_HELP,
 	VOR_ERR_UNKNOWN_OPT,
 	VOR_ERR_UNKNOWN_ERR,
-	VOR_ERR_INETINET6_SRC_OPTS_SET,
 	VOR_ERR_NO_SRC_GRP,
+	VOR_ERR_SINGLE_SRC_GRP_ONLY,
+	VOR_ERR_NO_DST_GRPS,
 	VOR_ERR_BAD_ADDR,
 	VOR_ERR_BAD_IF_ADDR,
 	VOR_ERR_BAD_PORT,
 	VOR_ERR_TX_TTL_OUT_OF_RANGE,
 	VOR_ERR_TX_HOPS_OUT_OF_RANGE,
+	VOR_ERR_BAD_OUT_INTF,
 };
 
 enum REPLICAST_MODE {
@@ -86,7 +88,6 @@ struct program_options {
 	unsigned int unknown_opt_set;
 	char *unknown_opt_str;
 
-	unsigned int inet_rx_sock_opts_set;
 	unsigned int inet_rx_sock_mcgroup_set;
 	char *inet_rx_sock_mcgroup_str;
 
@@ -367,7 +368,6 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->unknown_opt_set = 0;
 	prog_opts->unknown_opt_str = NULL;
 
-	prog_opts->inet_rx_sock_opts_set = 0;
 	prog_opts->inet_rx_sock_mcgroup_set = 0;
 	prog_opts->inet_rx_sock_mcgroup_str = NULL;
 
@@ -464,7 +464,6 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->help_set = 1;
 			break;
 		case CMDLINE_OPT_4SRCGRP:
-			prog_opts->inet_rx_sock_opts_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_str = optarg;
 			break;
@@ -532,6 +531,7 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 	enum aip_ptoh_errors aip_ptoh_err;
 	int tx_ttl;
 	int tx_hops;
+	unsigned int out_intf_idx;
 
 	
 	if (prog_opts->help_set) {
@@ -542,14 +542,20 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		return VOR_ERR_UNKNOWN_OPT;
 	}
 
-	if (prog_opts->inet_rx_sock_opts_set &&
-					prog_opts->inet6_rx_sock_opts_set) {
-		return VOR_ERR_INETINET6_SRC_OPTS_SET;
-	}
-
 	if (!prog_opts->inet_rx_sock_mcgroup_set &&
 				!prog_opts->inet6_rx_sock_mcgroup_set) {
 		return VOR_ERR_NO_SRC_GRP;
+	}
+
+	if (prog_opts->inet_rx_sock_mcgroup_set &&
+				prog_opts->inet6_rx_sock_mcgroup_set) {
+		return VOR_ERR_SINGLE_SRC_GRP_ONLY;
+	}
+
+
+	if (!prog_opts->inet_tx_sock_mc_dests_set &&
+				!prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+		return VOR_ERR_NO_DST_GRPS;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
@@ -616,7 +622,11 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		}
 
 		if (prog_opts->inet_tx_sock_out_intf_set) {
-			
+			ret = inet_if_addr(prog_opts->inet_tx_sock_out_intf_str,
+				&prog_parms->inet_tx_sock_parms.out_intf_addr);	
+			if (ret == -1) {
+				return VOR_ERR_BAD_OUT_INTF;
+			}
 		}
 	}
 
@@ -637,9 +647,13 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		}
 
 		if (prog_opts->inet6_tx_mc_sock_out_intf_set) {
+			out_intf_idx = if_nametoindex(prog_opts->
+						inet6_tx_mc_sock_out_intf_str);
+			if (out_intf_idx == 0) {
+				return VOR_ERR_BAD_OUT_INTF;
+			}
 			prog_parms->inet6_tx_sock_parms.out_intf_idx =
-				if_nametoindex(prog_opts->
-					inet6_tx_mc_sock_out_intf_str);
+								 out_intf_idx;
 		}
 
 	}
