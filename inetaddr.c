@@ -12,6 +12,7 @@
 
 #include <stdio.h> /* remove after debugging */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -151,8 +152,11 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 			memcpy(&((*ap_sa_list)[sa_list_len - 1]), &ap_sa,
 			       sizeof(ap_sa));
 		} else {
-			strncpy(ap_err_str, aip_str, ap_err_str_size - 1);
-			ap_err_str[ap_err_str_size] = '\0';
+			if (ap_err_str != NULL && ap_err_str_size > 0) {
+				strncpy(ap_err_str, aip_str,
+							ap_err_str_size - 1);
+				ap_err_str[ap_err_str_size] = '\0';
+			}
 			return -1;
 		}
 
@@ -173,6 +177,7 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		}
 
 	} while (more_aip_str &&
+		 sa_list_len < INT_MAX &&
 		((sa_list_len < max_sa_list_len ) || (max_sa_list_len == 0)));
 
 	return sa_list_len;

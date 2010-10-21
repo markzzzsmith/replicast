@@ -26,20 +26,41 @@ enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
 };
 
-enum VALIDATE_OPTS_RESULT {
-	VOR_HELP,
-	VOR_ERR_UNKNOWN_OPT,
-	VOR_ERR_UNKNOWN_ERR,
-	VOR_ERR_NO_SRC_GRP,
-	VOR_ERR_SINGLE_SRC_GRP_ONLY,
-	VOR_ERR_NO_DST_GRPS,
-	VOR_ERR_BAD_ADDR,
-	VOR_ERR_BAD_IF_ADDR,
-	VOR_ERR_BAD_PORT,
-	VOR_ERR_TX_TTL_OUT_OF_RANGE,
-	VOR_ERR_TX_HOPS_OUT_OF_RANGE,
-	VOR_ERR_BAD_OUT_INTF,
+enum VALIDATE_PROG_OPTS {
+	VPO_HELP,
+	VPO_ERR_UNKNOWN_OPT,
+	VPO_ERR_NO_SRC_GRP,
+	VPO_ERR_MULTI_SRC_GRPS,
+	VPO_ERR_NO_DST_GRPS,
+	VPO_MODE_INETINETINET6,
+	VPO_MODE_INETINET,
+	VPO_MODE_INETINET6,
+	VPO_MODE_INET6INETINET6,
+	VPO_MODE_INET6INET,
+	VPO_MODE_INET6INET6,
+	VPO_ERR_UNKNOWN,
 };
+
+enum VALIDATE_PROG_OPTS_VALS {
+	VPOV_ERR_BAD_SRC_GRP_ADDR,
+	VPOV_ERR_BAD_IF_ADDR,
+	VPOV_ERR_BAD_SRC_PORT,
+	VPOV_ERR_BAD_DST_PORT,
+	VPOV_ERR_INET_DST_GRP,
+	VPOV_ERR_INET_TX_TTL_RANGE,
+	VPOV_ERR_BAD_OUT_INTF,
+	VPOV_ERR_INET6_TX_HOPS_RANGE,
+	VPOV_ERR_UNKNOWN_ERR,
+	VPOV_OPTS_VALS_VALID,
+};
+
+enum OPT_ERR {
+	OE_UNKNOWN_OPT,
+	OE_NO_SRC_GRP,
+	OE_MULTI_SRC_GRPS,
+	OE_NO_DST_GRPS,
+};
+
 
 enum REPLICAST_MODE {
 	RCMODE_HELP,
@@ -91,7 +112,6 @@ struct program_options {
 	unsigned int inet_rx_sock_mcgroup_set;
 	char *inet_rx_sock_mcgroup_str;
 
-	unsigned int inet_tx_sock_opts_set;
 	unsigned int inet_tx_sock_mc_ttl_set;
 	char *inet_tx_sock_mc_ttl_str;
 	unsigned int inet_tx_sock_mc_loop_set;
@@ -100,11 +120,9 @@ struct program_options {
 	unsigned int inet_tx_sock_mc_dests_set;
 	char *inet_tx_sock_mc_dests_str;
 
-	unsigned int inet6_rx_sock_opts_set;
 	unsigned int inet6_rx_sock_mcgroup_set;
 	char *inet6_rx_sock_mcgroup_str;
 
-	unsigned int inet6_tx_mc_sock_opts_set;
 	unsigned int inet6_tx_mc_sock_mc_hops_set;
 	char *inet6_tx_mc_sock_mc_hops_str;
 	unsigned int inet6_tx_mc_sock_mc_loop_set;
@@ -136,9 +154,17 @@ void init_prog_parms(struct program_parameters *prog_parms);
 void get_prog_opts_cmdline(int argc, char *argv[],
 			   struct program_options *prog_opts);
 
-enum VALIDATE_OPTS_RESULT validate_prog_opts(
+enum VALIDATE_PROG_OPTS validate_prog_opts(
+				const struct program_options *prog_opts);
+
+enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				const struct program_options *prog_opts,
-				struct program_parameters *prog_parms);	
+				struct program_parameters *prog_parms,
+				char *err_str_parm,
+				const unsigned int err_str_size);
+
+void log_opt_error(enum OPT_ERR option_err,
+		   const char *err_str_parm);
 
 
 void close_sockets(void);
@@ -217,127 +243,28 @@ int inet6_tx_mcast(const int sock_fd,
  		   const struct sockaddr_in6 inet6_mc_dests[],
 		   const unsigned int mc_dests_num);
 
+
 int inet_in_sock_fd = -1;
 int inet6_in_sock_fd = -1;
 int inet_out_sock_fd = -1;
 int inet6_out_sock_fd = -1;
 
+struct program_parameters prog_parms;
+
+
 int main(int argc, char *argv[])
 {
-	struct inet_rx_mc_sock_params rx_sock_parms;
-	struct inet_tx_mc_sock_params tx_sock_parms;
-	//struct sockaddr_in inet_mc_dests[3];
-	struct sockaddr_in *inet_mc_dests = NULL;
-	struct inet6_rx_mc_sock_params rx6_sock_parms;
-	struct inet6_tx_mc_sock_params tx6_sock_parms;
-	struct sockaddr_in6 inet6_mc_dests[3];
-	char ap_err_str[AIP_STR_INET_MAX_LEN + 1];
-	int ap_pton_inet_csv_ret;
-	int ret;
-	
+	struct program_options prog_opts;
+	char *err_str = NULL;
+
 
 	atexit(close_sockets);
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
 
-	aip_ptoh_inet(argv[1], &rx_sock_parms.mc_group,
-		&rx_sock_parms.in_intf_addr, &rx_sock_parms.port, NULL);
-	if (rx_sock_parms.in_intf_addr.s_addr == INADDR_NONE) {
-		rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY;
-	}
+	get_prog_parms(argc, argv, &prog_opts, &prog_parms, err_str, 0);
 
-	ap_pton_inet_csv_ret = ap_pton_inet_csv(argv[2], &inet_mc_dests, 0,
-		(char *)&ap_err_str, AIP_STR_INET_MAX_LEN + 1);
-
-	printf("ap_pton_inet_csv_ret = %d\n", ap_pton_inet_csv_ret);
-	printf("ap_err_str = %s\n", ap_err_str);
-
-	tx_sock_parms.mc_ttl = 1;
-	tx_sock_parms.mc_loop = 1;
-	//inet_pton(AF_INET, "1.1.1.1", &tx_sock_parms.out_intf_addr);
-	tx_sock_parms.out_intf_addr.s_addr = INADDR_ANY; /* use route table */
-
-/*
-	memset(&inet_mc_dests[0], 0, sizeof(inet_mc_dests[0]));
-	inet_mc_dests[0].sin_family = AF_INET;
-	inet_pton(AF_INET, "224.5.5.5", &inet_mc_dests[0].sin_addr);
-	inet_mc_dests[0].sin_port = htons(1234);
-	
-	memset(&inet_mc_dests[1], 0, sizeof(inet_mc_dests[1]));
-	inet_mc_dests[1].sin_family = AF_INET;
-	inet_pton(AF_INET, "224.6.6.6", &inet_mc_dests[1].sin_addr);
-	inet_mc_dests[1].sin_port = htons(1234);
-	
-	memset(&inet_mc_dests[2], 0, sizeof(inet_mc_dests[2]));
-	inet_mc_dests[2].sin_family = AF_INET;
-	inet_pton(AF_INET, "224.7.7.7", &inet_mc_dests[2].sin_addr);
-	inet_mc_dests[2].sin_port = htons(1234);
-*/
-
-	tx_sock_parms.mc_dests = inet_mc_dests;
-	tx_sock_parms.mc_dests_num = ap_pton_inet_csv_ret;
-	
-	inet_to_inet_mcast(&inet_in_sock_fd, rx_sock_parms, &inet_out_sock_fd,
-		tx_sock_parms);
-
-	printf("argv[1] = %s\n", argv[1]);
-	ret = aip_ptoh_inet6(argv[1], &rx6_sock_parms.mc_group,
-		&rx6_sock_parms.in_intf_idx, &rx6_sock_parms.port, NULL);
-	printf("ret = %d\n", ret);
-
-/*
-	inet_pton(AF_INET6, "ff05::30", &rx6_sock_parms.mc_group);
-	rx6_sock_parms.port = 1234; 
-	rx6_sock_parms.in_intf_idx = 1;
-*/
-
-	tx6_sock_parms.mc_hops = 1;
-	tx6_sock_parms.mc_loop = 1;
-	//tx6_sock_parms.out_intf_idx = 2; /* eth0 */
-	tx6_sock_parms.out_intf_idx = 0; /* any - looks to match on 'local' route table */
-
-	memset(inet6_mc_dests, 0, sizeof(struct sockaddr_in6) * 3);
-
-	inet6_mc_dests[0].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::15", &inet6_mc_dests[0].sin6_addr);
-	inet6_mc_dests[0].sin6_port = htons(1234);
-
-	inet6_mc_dests[1].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::16", &inet6_mc_dests[1].sin6_addr);
-	inet6_mc_dests[1].sin6_port = htons(1234);
-
-	inet6_mc_dests[2].sin6_family = AF_INET6;	
-	inet_pton(AF_INET6, "ff02::17", &inet6_mc_dests[2].sin6_addr);
-	inet6_mc_dests[2].sin6_port = htons(1234);
-
-	tx6_sock_parms.mc_dests = inet6_mc_dests;
-	tx6_sock_parms.mc_dests_num = 3;
-
-/*
-	inet_to_inet6_mcast(&inet_in_sock_fd, rx_sock_parms,
-		&inet6_out_sock_fd, tx6_sock_parms);
-*/
-
-/*
-	inet_to_inet_inet6_mcast(&inet_in_sock_fd, rx_sock_parms,
-				 &inet_out_sock_fd, tx_sock_parms,
-				 &inet6_out_sock_fd, tx6_sock_parms);
-
-*/
-
-
-	inet6_to_inet6_mcast(&inet6_in_sock_fd, rx6_sock_parms,
-			     &inet6_out_sock_fd, tx6_sock_parms);
-
-
-
-/*
-	inet6_to_inet_mcast(&inet6_in_sock_fd, rx6_sock_parms,
-			     &inet_out_sock_fd, tx_sock_parms);
- */
-
-	return 0;
 
 }
 
@@ -349,10 +276,16 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   const unsigned int err_str_size)
 {
 
+
+	log_debug_med("%s() entry\n", __func__);
+
 	init_prog_opts(prog_opts);
 	get_prog_opts_cmdline(argc, argv, prog_opts);
 
 	init_prog_parms(prog_parms);
+
+
+	log_debug_med("%s() exit\n", __func__);
 
 	return RCMODE_ERROR;
 
@@ -363,6 +296,8 @@ void init_prog_opts(struct program_options *prog_opts)
 {
 
 
+	log_debug_med("%s() entry\n", __func__);
+
 	prog_opts->help_set = 0;
 
 	prog_opts->unknown_opt_set = 0;
@@ -371,7 +306,6 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet_rx_sock_mcgroup_set = 0;
 	prog_opts->inet_rx_sock_mcgroup_str = NULL;
 
-	prog_opts->inet_tx_sock_opts_set = 0;
 	prog_opts->inet_tx_sock_mc_ttl_set = 0;
 	prog_opts->inet_tx_sock_mc_ttl_str = NULL;
 	prog_opts->inet_tx_sock_out_intf_set = 0;
@@ -379,11 +313,9 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet_tx_sock_mc_dests_set = 0;
 	prog_opts->inet_tx_sock_mc_dests_str = NULL;
 
-	prog_opts->inet6_rx_sock_opts_set = 0;
 	prog_opts->inet6_rx_sock_mcgroup_set = 0;
 	prog_opts->inet6_rx_sock_mcgroup_str = NULL;
 
-	prog_opts->inet6_tx_mc_sock_opts_set = 0;
 	prog_opts->inet6_tx_mc_sock_mc_hops_set = 0;
 	prog_opts->inet6_tx_mc_sock_mc_hops_str = NULL;
 	prog_opts->inet6_tx_mc_sock_mc_loop_set = 0;
@@ -392,12 +324,16 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet6_tx_mc_sock_mc_dests_set = 0;
 	prog_opts->inet6_tx_mc_sock_mc_dests_str = NULL;
 	
+	log_debug_med("%s() exit\n", __func__);
+
 }
 
 
 void init_prog_parms(struct program_parameters *prog_parms)
 {
 
+
+	log_debug_med("%s() entry\n", __func__);
 
 	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
 	prog_parms->inet_rx_sock_parms.port = 0;
@@ -419,6 +355,8 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
 	prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
@@ -456,75 +394,155 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	enum CMDLINE_OPTS ret;
 
 
+	log_debug_med("%s() entry\n", __func__);
+
 	ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
+	log_debug_low("%s: getopt_long_only() = %d\n", __func__, ret);
 	while ((ret != -1) && (!prog_opts->help_set) &&
 						(!prog_opts->unknown_opt_set)) {
 		switch (ret) {
 		case CMDLINE_OPT_HELP:
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_HELP\n", __func__);
 			prog_opts->help_set = 1;
 			break;
 		case CMDLINE_OPT_4SRCGRP:
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_4SRCGRP\n", __func__);
 			prog_opts->inet_rx_sock_mcgroup_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_str = optarg;
 			break;
 		case CMDLINE_OPT_4TTL:
-			prog_opts->inet_tx_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_4TTL\n", __func__);
 			prog_opts->inet_tx_sock_mc_ttl_set = 1;
 			prog_opts->inet_tx_sock_mc_ttl_str = optarg;
 			break;
 		case CMDLINE_OPT_4LOOP:
-			prog_opts->inet_tx_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_4LOOP\n", __func__);
+			prog_opts->inet_tx_sock_mc_ttl_set = 1;
 			prog_opts->inet_tx_sock_mc_loop_set = 1;
 			break;
 		case CMDLINE_OPT_4OUTIF:
-			prog_opts->inet_tx_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_4OUTIF\n", __func__);
 			prog_opts->inet_tx_sock_out_intf_set = 1;
 			prog_opts->inet_tx_sock_out_intf_str = optarg;
 			break;
 		case CMDLINE_OPT_4DSTGRPS:
-			prog_opts->inet_tx_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_4DSTGRPS\n", __func__);
 			prog_opts->inet_tx_sock_mc_dests_set = 1;
 			prog_opts->inet_tx_sock_mc_dests_str = optarg;
 			break;
 		case CMDLINE_OPT_6SRCGRP:
-			prog_opts->inet6_rx_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_6SRCGRP\n", __func__);
 			prog_opts->inet6_rx_sock_mcgroup_set = 1;
 			prog_opts->inet6_rx_sock_mcgroup_str = optarg;
 			break;
 		case CMDLINE_OPT_6HOPS:
-			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_6HOPS\n", __func__);
 			prog_opts->inet6_tx_mc_sock_mc_hops_set = 1;
 			prog_opts->inet6_tx_mc_sock_mc_hops_str = optarg;
 			break;
 		case CMDLINE_OPT_6LOOP:
-			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_6LOOP\n", __func__);
 			prog_opts->inet6_tx_mc_sock_mc_loop_set = 1;
 			break;
 		case CMDLINE_OPT_6OUTIF:
-			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_6OUTIF\n", __func__);
 			prog_opts->inet6_tx_mc_sock_out_intf_set = 1;
 			prog_opts->inet6_tx_mc_sock_out_intf_str = optarg;
 			break;
 		case CMDLINE_OPT_6DSTGRPS:
-			prog_opts->inet6_tx_mc_sock_opts_set = 1;
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_6DSTGRPS\n", __func__);
 			prog_opts->inet6_tx_mc_sock_mc_dests_set = 1;
 			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
 			break;
 		default:
+			log_debug_low("%s: getopt_long_only() = "
+				"default:\n", __func__);
 			prog_opts->unknown_opt_set = 1;
 			prog_opts->unknown_opt_str = optarg;
 			break;
 		}
 
 		ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
+		log_debug_low("%s: getopt_long_only() = %d\n", __func__, ret);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
 
-enum VALIDATE_OPTS_RESULT validate_prog_opts(
+enum VALIDATE_PROG_OPTS validate_prog_opts(
+				const struct program_options *prog_opts)
+{
+
+
+	if (prog_opts->help_set) {
+		return VPO_HELP;
+	}
+	
+	if (prog_opts->unknown_opt_set) {
+		return VPO_ERR_UNKNOWN_OPT;
+	}
+
+	if (!prog_opts->inet_rx_sock_mcgroup_set &&
+				!prog_opts->inet6_rx_sock_mcgroup_set) {
+		return VPO_ERR_NO_SRC_GRP;
+	}
+
+	if (prog_opts->inet_rx_sock_mcgroup_set &&
+				prog_opts->inet6_rx_sock_mcgroup_set) {
+		return VPO_ERR_MULTI_SRC_GRPS;
+	}
+
+
+	if (!prog_opts->inet_tx_sock_mc_dests_set &&
+				!prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+		return VPO_ERR_NO_DST_GRPS;
+	}
+
+	if (prog_opts->inet_rx_sock_mcgroup_set) {
+		if (prog_opts->inet_tx_sock_mc_dests_set &&
+                                prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			return VPO_MODE_INETINETINET6;
+		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+			return VPO_MODE_INETINET;	
+		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			return VPO_MODE_INETINET6;
+		}
+	}
+
+	if (prog_opts->inet6_rx_sock_mcgroup_set) {
+		if (prog_opts->inet_tx_sock_mc_dests_set &&
+                                prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			return VPO_MODE_INET6INETINET6;
+		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+			return VPO_MODE_INET6INET;	
+		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			return VPO_MODE_INET6INET6;
+		}
+	}
+
+	return VPO_ERR_UNKNOWN;
+
+}
+
+
+enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				const struct program_options *prog_opts,
-				struct program_parameters *prog_parms)
+				struct program_parameters *prog_parms,
+				char *err_str_parm,
+				const unsigned int err_str_size)
 {
 	int ret;
 	unsigned int udp_port;
@@ -533,30 +551,6 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 	int tx_hops;
 	unsigned int out_intf_idx;
 
-	
-	if (prog_opts->help_set) {
-		return VOR_HELP;
-	}
-	
-	if (prog_opts->unknown_opt_set) {
-		return VOR_ERR_UNKNOWN_OPT;
-	}
-
-	if (!prog_opts->inet_rx_sock_mcgroup_set &&
-				!prog_opts->inet6_rx_sock_mcgroup_set) {
-		return VOR_ERR_NO_SRC_GRP;
-	}
-
-	if (prog_opts->inet_rx_sock_mcgroup_set &&
-				prog_opts->inet6_rx_sock_mcgroup_set) {
-		return VOR_ERR_SINGLE_SRC_GRP_ONLY;
-	}
-
-
-	if (!prog_opts->inet_tx_sock_mc_dests_set &&
-				!prog_opts->inet6_tx_mc_sock_mc_dests_set) {
-		return VOR_ERR_NO_DST_GRPS;
-	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
 		ret = aip_ptoh_inet(prog_opts->inet_rx_sock_mcgroup_str,
@@ -567,22 +561,24 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
 			case AIP_PTOX_ERR_BAD_ADDR:
-				return VOR_ERR_BAD_ADDR;
+				return VPOV_ERR_BAD_SRC_GRP_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_IF_ADDR:
-				return VOR_ERR_BAD_IF_ADDR;
+				return VPOV_ERR_BAD_IF_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_PORT:
-				return VOR_ERR_BAD_PORT;
+				return VPOV_ERR_BAD_SRC_PORT;
 				break;
 			default:
-				return VOR_ERR_UNKNOWN_ERR;
+				return VPOV_ERR_UNKNOWN_ERR;
 				break;
 			}
 		} else {
 			prog_parms->inet_rx_sock_parms.port = htons(udp_port);
 		}
-	} else if (prog_opts->inet6_rx_sock_mcgroup_set) {
+	}
+
+	if (prog_opts->inet6_rx_sock_mcgroup_set) {
 		ret = aip_ptoh_inet6(prog_opts->inet6_rx_sock_mcgroup_str,
 			&prog_parms->inet6_rx_sock_parms.mc_group,
 			&prog_parms->inet6_rx_sock_parms.in_intf_idx,
@@ -591,13 +587,13 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
 			case AIP_PTOX_ERR_BAD_ADDR:
-				return VOR_ERR_BAD_ADDR;
+				return VPOV_ERR_BAD_SRC_GRP_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_PORT:
-				return VOR_ERR_BAD_PORT;
+				return VPOV_ERR_BAD_SRC_PORT;
 				break;
 			default:
-				return VOR_ERR_UNKNOWN_ERR;
+				return VPOV_ERR_UNKNOWN_ERR;
 				break;
 			}
 		} else {
@@ -605,12 +601,23 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 		}
 	}
 
-	if (prog_opts->inet_tx_sock_opts_set) {
+	if (prog_opts->inet_tx_sock_mc_dests_set) {
+		ret = ap_pton_inet_csv(
+				prog_opts->inet_tx_sock_mc_dests_str,
+				&prog_parms->inet_tx_sock_parms.mc_dests,
+				0,
+				err_str_parm,
+				err_str_size);
+		if (ret == -1) {
+			return VPOV_ERR_INET_DST_GRP;
+		} else {
+			prog_parms->inet_tx_sock_parms.mc_dests_num = ret;
+		}
 
 		if (prog_opts->inet_tx_sock_mc_ttl_set) {
 			tx_ttl = atoi(prog_opts->inet_tx_sock_mc_ttl_str);
 			if ((tx_ttl < 0) || (tx_ttl > 255)) {
-				return VOR_ERR_TX_TTL_OUT_OF_RANGE;
+				return VPOV_ERR_INET_TX_TTL_RANGE;
 			} else {
 				prog_parms->inet_tx_sock_parms.mc_ttl =
 									tx_ttl;
@@ -625,17 +632,17 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 			ret = inet_if_addr(prog_opts->inet_tx_sock_out_intf_str,
 				&prog_parms->inet_tx_sock_parms.out_intf_addr);	
 			if (ret == -1) {
-				return VOR_ERR_BAD_OUT_INTF;
+				return VPOV_ERR_BAD_OUT_INTF;
 			}
 		}
 	}
 
-	if (prog_opts->inet6_tx_mc_sock_opts_set) {
+	if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
 
 		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
 			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
 			if ((tx_hops < 0) || (tx_ttl)) {
-				return VOR_ERR_TX_HOPS_OUT_OF_RANGE;
+				return VPOV_ERR_INET6_TX_HOPS_RANGE;
 			} else {
 				prog_parms->inet6_tx_sock_parms.mc_hops =
 								tx_hops;
@@ -650,14 +657,41 @@ enum VALIDATE_OPTS_RESULT validate_prog_opts(
 			out_intf_idx = if_nametoindex(prog_opts->
 						inet6_tx_mc_sock_out_intf_str);
 			if (out_intf_idx == 0) {
-				return VOR_ERR_BAD_OUT_INTF;
+				return VPOV_ERR_BAD_OUT_INTF;
 			}
 			prog_parms->inet6_tx_sock_parms.out_intf_idx =
 								 out_intf_idx;
 		}
-
 	}
 
+	return VPOV_OPTS_VALS_VALID;
+
+}
+
+
+void log_opt_error(enum OPT_ERR option_err,
+		   const char *err_str_parm)
+{
+
+
+	switch (option_err) {
+	case OE_UNKNOWN_OPT:
+		log_msg(LOG_SEV_ERR, "Unknown option.\n");
+		break;
+	case OE_NO_SRC_GRP:
+		log_msg(LOG_SEV_ERR, "No multicast source group specified.\n");
+		break;
+	case OE_MULTI_SRC_GRPS:
+		log_msg(LOG_SEV_ERR, "Too many multicast source groups.\n");
+		break;
+	case OE_NO_DST_GRPS:
+		log_msg(LOG_SEV_ERR, "No multicast destination groups ");
+		log_msg(LOG_SEV_ERR, "specified.\n");
+		break;
+	default:
+		log_msg(LOG_SEV_ERR, "Unknown option error.\n");
+		break;
+	}
 
 }
 
@@ -683,7 +717,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
@@ -708,6 +742,8 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		}
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 }
 
 
@@ -720,7 +756,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
@@ -745,6 +781,8 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 		}
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 }
 
 
@@ -760,7 +798,7 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
@@ -792,6 +830,8 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		}
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 }
 
 
@@ -804,7 +844,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 	ssize_t rx_pkt_len;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
@@ -828,6 +868,8 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 				tx_sock_parms.mc_dests_num);
 		}
 	}
+
+	log_debug_med("\t%s() exit\n", __func__);
 
 }
 
@@ -983,11 +1025,13 @@ void close_inet_rx_mc_sock(const int sock_fd)
 {
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
@@ -1060,11 +1104,13 @@ void close_inet6_rx_mc_sock(const int sock_fd)
 {
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
@@ -1121,11 +1167,13 @@ void close_inet_tx_mc_sock(int sock_fd)
 {
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
@@ -1174,11 +1222,13 @@ void close_inet6_tx_mc_sock(int sock_fd)
 {
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	if (sock_fd != -1) {
 		close(sock_fd);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 

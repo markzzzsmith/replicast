@@ -22,7 +22,7 @@ static void (*log_msg_local_function)
                 (const enum log_msg_severity, const char *, va_list) = NULL;
 
 
-static FILE *log_file_fd;
+static FILE *log_file_fd = NULL;
 static const int log_default_syslog_facility = LOG_USER;
 
 
@@ -382,7 +382,9 @@ static void log_msg_file_va(const char *fmt,
 {
 
 
-	vfprintf(log_file_fd, fmt, fmt_args);
+	if (log_file_fd != NULL) {
+		vfprintf(log_file_fd, fmt, fmt_args);
+	}
 
 }
 
@@ -481,7 +483,9 @@ static void log_file_close(void)
 {
 
 
-	fclose(log_file_fd);
+	if (log_file_fd != NULL) {
+		fclose(log_file_fd);
+	}
 
 }
 
