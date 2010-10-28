@@ -275,14 +275,46 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   char err_str[],
 				   const unsigned int err_str_size)
 {
+	enum VALIDATE_PROG_OPTS vpo;
+	enum VALIDATE_PROG_OPTS_VALS vpov;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
 	init_prog_opts(prog_opts);
+	init_prog_parms(prog_parms);
+
 	get_prog_opts_cmdline(argc, argv, prog_opts);
 
-	init_prog_parms(prog_parms);
+	vpo = validate_prog_opts(prog_opts);
+
+	switch (vpo) {
+	case VPO_HELP:
+		break;
+	case VPO_ERR_UNKNOWN_OPT:
+		break;
+	case VPO_ERR_NO_SRC_GRP:
+		break;
+	case VPO_ERR_MULTI_SRC_GRPS:
+		break;
+	case VPO_ERR_NO_DST_GRPS:
+		break;
+	case VPO_MODE_INETINETINET6:
+	case VPO_MODE_INETINET:
+	case VPO_MODE_INETINET6:
+	case VPO_MODE_INET6INETINET6:
+	case VPO_MODE_INET6INET:
+	case VPO_MODE_INET6INET6:
+		vpov = validate_prog_opts_vals(prog_opts, prog_parms,
+							err_str, err_str_size);
+		break;
+	case VPO_ERR_UNKNOWN:
+		break;
+	default:
+		break;
+	
+	}
+
 
 
 	log_debug_med("%s() exit\n", __func__);
@@ -396,8 +428,10 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 
 	log_debug_med("%s() entry\n", __func__);
 
-	ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
-	log_debug_low("%s: getopt_long_only() = %d\n", __func__, ret);
+	opterr = 0;
+
+	ret = getopt_long_only(argc, argv, ":", cmdline_opts, NULL);
+	log_debug_low("%s: getopt_long_only() = %d, %c\n", __func__, ret, ret);
 	while ((ret != -1) && (!prog_opts->help_set) &&
 						(!prog_opts->unknown_opt_set)) {
 		switch (ret) {
@@ -465,6 +499,10 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet6_tx_mc_sock_mc_dests_set = 1;
 			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
 			break;
+		case ':':
+			log_debug_low("%s: getopt_long_only() = "
+				"\":\"\n", __func__);
+			break;
 		default:
 			log_debug_low("%s: getopt_long_only() = "
 				"default:\n", __func__);
@@ -474,7 +512,8 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		}
 
 		ret = getopt_long_only(argc, argv, "", cmdline_opts, NULL);
-		log_debug_low("%s: getopt_long_only() = %d\n", __func__, ret);
+		log_debug_low("%s: getopt_long_only() = %d, %c\n", __func__,
+			ret, ret);
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -487,37 +526,58 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 {
 
 
+	log_debug_med("%s() entry\n", __func__);
+
 	if (prog_opts->help_set) {
+		log_debug_low("%s() return VPO_HELP\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
 		return VPO_HELP;
 	}
 	
 	if (prog_opts->unknown_opt_set) {
+		log_debug_low("%s() return VPO_ERR_UNKNOWN_OPT\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_UNKNOWN_OPT;
 	}
 
 	if (!prog_opts->inet_rx_sock_mcgroup_set &&
 				!prog_opts->inet6_rx_sock_mcgroup_set) {
+		log_debug_low("%s() return VPO_ERR_NO_SRC_GRP\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_NO_SRC_GRP;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set &&
 				prog_opts->inet6_rx_sock_mcgroup_set) {
+		log_debug_low("%s() return VPO_ERR_MULTI_SRC_GRPS\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_MULTI_SRC_GRPS;
 	}
 
 
 	if (!prog_opts->inet_tx_sock_mc_dests_set &&
 				!prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+		log_debug_low("%s() return VPO_ERR_NO_DST_GRPS\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_NO_DST_GRPS;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
 		if (prog_opts->inet_tx_sock_mc_dests_set &&
                                 prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INETINETINET6\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINETINET6;
 		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INETINET\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINET;	
 		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INETINET6\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINET6;
 		}
 	}
@@ -525,13 +585,25 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 	if (prog_opts->inet6_rx_sock_mcgroup_set) {
 		if (prog_opts->inet_tx_sock_mc_dests_set &&
                                 prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INET6INETINET6\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INETINET6;
 		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INET6INET\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INET;	
 		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+			log_debug_low("%s() return VPO_MODE_INET6INET6\n",
+				__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INET6;
 		}
 	}
+
+	log_debug_low("%s() return VPO_ERR_UNKNOWN\n", __func__);
+	log_debug_med("%s() exit\n", __func__);
 
 	return VPO_ERR_UNKNOWN;
 
@@ -552,6 +624,8 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 	unsigned int out_intf_idx;
 
 
+	log_debug_med("%s() entry\n", __func__);
+
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
 		ret = aip_ptoh_inet(prog_opts->inet_rx_sock_mcgroup_str,
 			&prog_parms->inet_rx_sock_parms.mc_group,
@@ -561,15 +635,31 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
 			case AIP_PTOX_ERR_BAD_ADDR:
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_SRC_GRP_ADDR\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_SRC_GRP_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_IF_ADDR:
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_IF_ADDR\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_IF_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_PORT:
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_SRC_PORT\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_SRC_PORT;
 				break;
 			default:
+				log_debug_low("%s() return "
+					"VPOV_ERR_UNKNOWN_ERR\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_UNKNOWN_ERR;
 				break;
 			}
@@ -587,12 +677,24 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
 			case AIP_PTOX_ERR_BAD_ADDR:
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_SRC_GRP_ADDR\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_SRC_GRP_ADDR;
 				break;
 			case AIP_PTOX_ERR_BAD_PORT:
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_SRC_PORT\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_SRC_PORT;
 				break;
 			default:
+				log_debug_low("%s() return "
+					"VPOV_ERR_UNKNOWN_ERR\n",
+					__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_UNKNOWN_ERR;
 				break;
 			}
@@ -609,6 +711,9 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				err_str_parm,
 				err_str_size);
 		if (ret == -1) {
+			log_debug_low("%s() return VPOV_ERR_INET_DST_GRP\n",
+					__func__);
+			log_debug_med("%s() exit\n", __func__);
 			return VPOV_ERR_INET_DST_GRP;
 		} else {
 			prog_parms->inet_tx_sock_parms.mc_dests_num = ret;
@@ -617,6 +722,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		if (prog_opts->inet_tx_sock_mc_ttl_set) {
 			tx_ttl = atoi(prog_opts->inet_tx_sock_mc_ttl_str);
 			if ((tx_ttl < 0) || (tx_ttl > 255)) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_INET_TX_TTL_RANGE\n",
+						__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_INET_TX_TTL_RANGE;
 			} else {
 				prog_parms->inet_tx_sock_parms.mc_ttl =
@@ -632,6 +741,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			ret = inet_if_addr(prog_opts->inet_tx_sock_out_intf_str,
 				&prog_parms->inet_tx_sock_parms.out_intf_addr);	
 			if (ret == -1) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_OUT_INTF\n",
+						__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_OUT_INTF;
 			}
 		}
@@ -642,6 +755,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
 			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
 			if ((tx_hops < 0) || (tx_ttl)) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_INET6_TX_HOPS_RANGE\n",
+						__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_INET6_TX_HOPS_RANGE;
 			} else {
 				prog_parms->inet6_tx_sock_parms.mc_hops =
@@ -657,12 +774,19 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			out_intf_idx = if_nametoindex(prog_opts->
 						inet6_tx_mc_sock_out_intf_str);
 			if (out_intf_idx == 0) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_BAD_OUT_INTF\n",
+						__func__);
+				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_BAD_OUT_INTF;
 			}
 			prog_parms->inet6_tx_sock_parms.out_intf_idx =
 								 out_intf_idx;
 		}
 	}
+
+	log_debug_low("%s() return VPOV_OPTS_VALS_VALID\n", __func__);
+	log_debug_med("%s() exit\n", __func__);
 
 	return VPOV_OPTS_VALS_VALID;
 
