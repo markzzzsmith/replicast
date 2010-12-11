@@ -500,12 +500,12 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
 			break;
 		case ':':
-			log_debug_low("%s: getopt_long_only() = "
-				"\":\"\n", __func__);
+			log_debug_low("%s: getopt_long_only() = missing "
+				"option parameter\n", __func__);
 			break;
 		default:
 			log_debug_low("%s: getopt_long_only() = "
-				"default:\n", __func__);
+				"unknown option\n", __func__);
 			prog_opts->unknown_opt_set = 1;
 			prog_opts->unknown_opt_str = optarg;
 			break;
