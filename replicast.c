@@ -281,6 +281,7 @@ int main(int argc, char *argv[])
 
 	rc_mode = get_prog_parms(argc, argv, &prog_opts, &prog_parms,
 								err_str, 0);
+
 	switch (rc_mode) {
 	case RCMODE_INET_TO_INET:
 		inet_to_inet_mcast(&inet_in_sock_fd,
@@ -786,6 +787,12 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_parms->inet_rx_sock_parms.in_intf_addr =
 					in_intf_addr;
 			}
+			if (prog_parms->inet_rx_sock_parms.port == 0) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_SRC_PORT\n", __func__);
+				log_debug_med("%s() exit\n", __func__);
+				return VPOV_ERR_SRC_PORT;
+			}
 		}
 	}
 
@@ -820,6 +827,13 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_UNKNOWN_ERR;
 				break;
+			}
+		} else {
+			if (prog_parms->inet6_rx_sock_parms.port == 0) {
+				log_debug_low("%s() return "
+					"VPOV_ERR_SRC_PORT\n", __func__);
+				log_debug_med("%s() exit\n", __func__);
+				return VPOV_ERR_SRC_PORT;
 			}
 		}
 	}
