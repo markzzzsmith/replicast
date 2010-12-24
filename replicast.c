@@ -172,6 +172,12 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				char *err_str_parm,
 				const unsigned int err_str_size);
 
+int validate_prog_opts_values(const struct program_options *prog_opts,
+			      struct program_parameters *prog_parms,
+			      char *err_str_parm,
+			      const unsigned int err_str_size);
+
+
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
 
@@ -282,6 +288,43 @@ int main(int argc, char *argv[])
 				   &inet_out_sock_fd,
 				   prog_parms.inet_tx_sock_parms);
 		break;
+	case RCMODE_INET_TO_INET6:
+		inet_to_inet6_mcast(&inet_in_sock_fd,
+				    prog_parms.inet_rx_sock_parms,
+				    &inet6_out_sock_fd,
+				    prog_parms.inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET_TO_INET_INET6:
+		inet_to_inet_inet6_mcast(&inet_in_sock_fd,
+					 prog_parms.inet_rx_sock_parms,
+					 &inet_out_sock_fd,
+					 prog_parms.inet_tx_sock_parms,
+					 &inet6_out_sock_fd,
+					 prog_parms.inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET6:
+		inet6_to_inet6_mcast(&inet6_in_sock_fd,
+				     prog_parms.inet6_rx_sock_parms,
+				     &inet6_out_sock_fd,
+				     prog_parms.inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET:
+		inet6_to_inet_mcast(&inet6_in_sock_fd,
+				    prog_parms.inet6_rx_sock_parms,
+				    &inet_out_sock_fd,
+				    prog_parms.inet_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET_INET6:
+		inet6_to_inet_inet6_mcast(&inet6_in_sock_fd,
+				    prog_parms.inet6_rx_sock_parms,
+				    &inet_out_sock_fd,
+				    prog_parms.inet_tx_sock_parms,
+				    &inet6_out_sock_fd,
+				    prog_parms.inet6_tx_sock_parms);
+		break;
+	case RCMODE_ERROR:
+		exit(EXIT_FAILURE);
+		break;
 	}
 
 }
@@ -294,8 +337,8 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   const unsigned int err_str_size)
 {
 	enum VALIDATE_PROG_OPTS vpo;
-	enum VALIDATE_PROG_OPTS_VALS vpov;
 	enum REPLICAST_MODE rcmode = RCMODE_ERROR;
+	int vpo_values_ret = 0;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -309,90 +352,83 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 
 	switch (vpo) {
 	case VPO_HELP:
+		rcmode = RCMODE_HELP;
 		break;
 	case VPO_ERR_UNKNOWN_OPT:
+		rcmode = RCMODE_ERROR;
 		log_opt_error(OE_UNKNOWN_OPT, NULL);
-		exit(EXIT_FAILURE);
 		break;
 	case VPO_ERR_NO_SRC_GRP:
+		rcmode = RCMODE_ERROR;
 		log_opt_error(OE_NO_SRC_GRP, NULL);
-		exit(EXIT_FAILURE);
 		break;
 	case VPO_ERR_MULTI_SRC_GRPS:
+		rcmode = RCMODE_ERROR;
 		log_opt_error(OE_MULTI_SRC_GRPS, NULL);
-		exit(EXIT_FAILURE);
 		break;
 	case VPO_ERR_NO_DST_GRPS:
+		rcmode = RCMODE_ERROR;
 		log_opt_error(OE_NO_DST_GRPS, NULL);
-		exit(EXIT_FAILURE);
 		break;
 	case VPO_MODE_INETINETINET6:
 		rcmode = RCMODE_INET6_TO_INET_INET6;
 		break;
 	case VPO_MODE_INETINET:
 		rcmode = RCMODE_INET_TO_INET;
-		vpov = validate_prog_opts_vals(prog_opts, prog_parms,
-							err_str, err_str_size);
-		switch (vpov) {
-		case VPOV_ERR_SRC_GRP_ADDR:
-			log_opt_error(OE_SRC_GRP_ADDR, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_IF_ADDR:
-			log_opt_error(OE_IF_ADDR, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_SRC_PORT:
-			log_opt_error(OE_SRC_PORT, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_DST_PORT:
-			log_opt_error(OE_DST_PORT, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_INET_DST_GRP:
-			log_opt_error(OE_INET_DST_GRP, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_INET_TX_TTL_RANGE:
-			log_opt_error(OE_INET_TX_TTL_RANGE, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_OUT_INTF:
-			log_opt_error(OE_OUT_INTF, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_INET6_TX_HOPS_RANGE:
-			log_opt_error(OE_INET6_TX_HOPS_RANGE, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_ERR_UNKNOWN_ERR:
-			log_opt_error(OE_UNKNOWN_ERROR, NULL);
-			exit(EXIT_FAILURE);
-			break;
-		case VPOV_OPTS_VALS_VALID:
-			break;
-		default:
-			break;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INETINET6:
 		rcmode = RCMODE_INET_TO_INET6;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
+		}
 		break;
 	case VPO_MODE_INET6INETINET6:
 		rcmode = RCMODE_INET6_TO_INET_INET6;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
+		}
 		break;
 	case VPO_MODE_INET6INET:
 		rcmode = RCMODE_INET6_TO_INET;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
+		}
 		break;
 	case VPO_MODE_INET6INET6:
 		rcmode = RCMODE_INET6_TO_INET6;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
+		}
 		break;
 	case VPO_ERR_UNKNOWN:
+		rcmode = RCMODE_ERROR;
 		log_opt_error(OE_UNKNOWN_ERROR, NULL);
-		exit(EXIT_FAILURE);
 		break;
 	default:
+		rcmode = RCMODE_HELP;
 		break;
 	
 	}
@@ -889,6 +925,57 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 }
 
 
+int validate_prog_opts_values(const struct program_options *prog_opts,
+			      struct program_parameters *prog_parms,
+			      char *err_str_parm,
+			      const unsigned int err_str_size)
+{
+	enum VALIDATE_PROG_OPTS_VALS vpov;
+	int ret = -1;
+
+
+	vpov = validate_prog_opts_vals(prog_opts, prog_parms,
+						err_str_parm, err_str_size);
+	switch (vpov) {
+	case VPOV_ERR_SRC_GRP_ADDR:
+		log_opt_error(OE_SRC_GRP_ADDR, NULL);
+		break;
+	case VPOV_ERR_IF_ADDR:
+		log_opt_error(OE_IF_ADDR, NULL);
+		break;
+	case VPOV_ERR_SRC_PORT:
+		log_opt_error(OE_SRC_PORT, NULL);
+		break;
+	case VPOV_ERR_DST_PORT:
+		log_opt_error(OE_DST_PORT, NULL);
+		break;
+	case VPOV_ERR_INET_DST_GRP:
+		log_opt_error(OE_INET_DST_GRP, NULL);
+		break;
+	case VPOV_ERR_INET_TX_TTL_RANGE:
+		log_opt_error(OE_INET_TX_TTL_RANGE, NULL);
+		break;
+	case VPOV_ERR_OUT_INTF:
+		log_opt_error(OE_OUT_INTF, NULL);
+		break;
+	case VPOV_ERR_INET6_TX_HOPS_RANGE:
+		log_opt_error(OE_INET6_TX_HOPS_RANGE, NULL);
+		break;
+	case VPOV_ERR_UNKNOWN_ERR:
+		log_opt_error(OE_UNKNOWN_ERROR, NULL);
+		break;
+	case VPOV_OPTS_VALS_VALID:
+		ret = 0;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+
+}
+
+
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm)
 {
@@ -907,7 +994,7 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Too many multicast source groups.\n");
 		break;
 	case OE_NO_DST_GRPS:
-		log_msg(LOG_SEV_ERR, "No multicast destination groups ");
+		log_msg(LOG_SEV_ERR, "No multicast destination group(s) ");
 		log_msg(LOG_SEV_ERR, "specified.\n");
 		break;
 	case OE_SRC_GRP_ADDR:
