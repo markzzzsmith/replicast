@@ -27,6 +27,9 @@ to view static multicast routes
 
 	'ip -6 route show table local'
 
+
+N.B. outbound interface must have a global IPv6 address if the multicast
+destination has a larger scope than link local
 	
 3. Misc Notes
 

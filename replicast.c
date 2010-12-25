@@ -49,6 +49,7 @@ enum VALIDATE_PROG_OPTS_VALS {
 	VPOV_ERR_INET_DST_GRP,
 	VPOV_ERR_INET_TX_TTL_RANGE,
 	VPOV_ERR_OUT_INTF,
+	VPOV_ERR_INET6_DST_GRP,
 	VPOV_ERR_INET6_TX_HOPS_RANGE,
 	VPOV_ERR_UNKNOWN_ERR,
 	VPOV_OPTS_VALS_VALID,
@@ -63,9 +64,10 @@ enum OPT_ERR {
 	OE_IF_ADDR,
 	OE_SRC_PORT,
 	OE_DST_PORT,
-	OE_INET_DST_GRP,
+	OE_INET_DST_GRPS,
 	OE_INET_TX_TTL_RANGE,
 	OE_OUT_INTF,
+	OE_INET6_DST_GRPS,
 	OE_INET6_TX_HOPS_RANGE,
 	OE_UNKNOWN_ERROR,
 };
@@ -896,6 +898,23 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 	if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
 		log_debug_low("%s() prog_opts->inet6_tx_sock_mc_dests_set\n",
 								__func__);
+
+		ret = ap_pton_inet6_csv(
+				prog_opts->inet6_tx_mc_sock_mc_dests_str,
+				&prog_parms->inet6_tx_sock_parms.mc_dests,
+				0,
+				err_str_parm,
+				err_str_size);
+		if (ret == -1) {
+			log_debug_low("%s() return VPOV_ERR_INET6_DST_GRP\n",
+					__func__);
+			log_debug_med("%s() exit\n", __func__);
+			return VPOV_ERR_INET6_DST_GRP;
+		} else {
+			prog_parms->inet6_tx_sock_parms.mc_dests_num = ret;
+		}
+
+
 		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
 			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
 			if ((tx_hops < 0) || (tx_ttl)) {
@@ -964,13 +983,16 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 		log_opt_error(OE_DST_PORT, NULL);
 		break;
 	case VPOV_ERR_INET_DST_GRP:
-		log_opt_error(OE_INET_DST_GRP, NULL);
+		log_opt_error(OE_INET_DST_GRPS, NULL);
 		break;
 	case VPOV_ERR_INET_TX_TTL_RANGE:
 		log_opt_error(OE_INET_TX_TTL_RANGE, NULL);
 		break;
 	case VPOV_ERR_OUT_INTF:
 		log_opt_error(OE_OUT_INTF, NULL);
+		break;
+	case VPOV_ERR_INET6_DST_GRP:
+		log_opt_error(OE_INET6_DST_GRPS, NULL);
 		break;
 	case VPOV_ERR_INET6_TX_HOPS_RANGE:
 		log_opt_error(OE_INET6_TX_HOPS_RANGE, NULL);
@@ -1023,7 +1045,7 @@ void log_opt_error(enum OPT_ERR option_err,
 	case OE_DST_PORT:
 		log_msg(LOG_SEV_ERR, "Invalid destination port.\n");
 		break;
-	case OE_INET_DST_GRP:
+	case OE_INET_DST_GRPS:
 		log_msg(LOG_SEV_ERR, "Invalid IPv4 destination group.\n");
 		break;
 	case OE_INET_TX_TTL_RANGE:
@@ -1031,6 +1053,9 @@ void log_opt_error(enum OPT_ERR option_err,
 		break;
 	case OE_OUT_INTF:
 		log_msg(LOG_SEV_ERR, "Invalid output interface.\n");
+		break;
+	case OE_INET6_DST_GRPS:
+		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination group.\n");
 		break;
 	case OE_INET6_TX_HOPS_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 transmit hop-count.\n");

@@ -270,6 +270,89 @@ int aip_ptoh_inet6(const char *aip_str,
 }
 
 
+int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
+		      struct sockaddr_in6 **ap_sa6_list,
+		      const int max_sa6_list_len,
+		      char *ap_err_str,
+		      const unsigned int ap_err_str_size)
+{
+	int sa6_list_len = 0;
+	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
+	int more_aip_str = 0;
+	const char *curr_aip_str = NULL;
+	char *ap_csv_comma_ptr = NULL;
+	char *aip_str_comma_ptr = NULL;
+	struct sockaddr_in6 ap_sa6;
+	unsigned int ifidx;
+	unsigned int port;
+	int ret;
+	enum aip_ptoh_errors aip_ptoh_err;
+
+
+	if (*ap_sa6_list != NULL) {
+		return -1;
+	}
+
+	curr_aip_str = ap_inet6_csv_str;
+
+	strncpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
+	aip_str[AIP_STR_INET6_MAX_LEN] = '\0';
+
+	aip_str_comma_ptr = strchr(aip_str, ',');
+	if (aip_str_comma_ptr != NULL) {
+		*aip_str_comma_ptr = '\0';
+	}
+
+	do {
+		memset(&ap_sa6, 0, sizeof(ap_sa6));
+
+		ret = aip_ptoh_inet6(aip_str, &ap_sa6.sin6_addr, &ifidx,
+				    &port, &aip_ptoh_err);
+
+		if (ret != -1) {
+			ap_sa6.sin6_family = AF_INET6;
+			ap_sa6.sin6_port = htons(port);
+			sa6_list_len++;
+
+			*ap_sa6_list = realloc(*ap_sa6_list,
+					      sa6_list_len * sizeof(ap_sa6));
+			memcpy(&((*ap_sa6_list)[sa6_list_len - 1]), &ap_sa6,
+			       sizeof(ap_sa6));
+		} else {
+			if (ap_err_str != NULL && ap_err_str_size > 0) {
+				strncpy(ap_err_str, aip_str,
+							ap_err_str_size - 1);
+				ap_err_str[ap_err_str_size] = '\0';
+			}
+			return -1;
+		}
+
+		ap_csv_comma_ptr = strchr(curr_aip_str, ',');
+		if (ap_csv_comma_ptr == NULL) {
+			more_aip_str = 0;
+		} else {
+			curr_aip_str = ap_csv_comma_ptr + 1;
+
+			strncpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
+			aip_str[AIP_STR_INET6_MAX_LEN] = '\0';
+
+			aip_str_comma_ptr = strchr(aip_str, ',');
+			if (aip_str_comma_ptr != NULL) {
+				*aip_str_comma_ptr = '\0';
+			}
+			more_aip_str = 1;
+		}
+
+	} while (more_aip_str &&
+		 sa6_list_len < INT_MAX &&
+		((sa6_list_len < max_sa6_list_len ) ||
+						(max_sa6_list_len == 0)));
+
+	return sa6_list_len;
+
+}
+
+
 int inet_if_addr(const char *str,
                  struct in_addr *if_addr)
 {
