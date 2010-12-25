@@ -1018,7 +1018,7 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Invalid interface address.\n");
 		break;
 	case OE_SRC_PORT:
-		log_msg(LOG_SEV_ERR, "Invalid source port.\n");
+		log_msg(LOG_SEV_ERR, "Invalid or missing source port.\n");
 		break;
 	case OE_DST_PORT:
 		log_msg(LOG_SEV_ERR, "Invalid destination port.\n");
