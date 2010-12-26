@@ -21,6 +21,8 @@
 #include "inetaddr.h"
 
 
+const float replicast_version = 0.1;
+
 enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
 };
@@ -151,6 +153,8 @@ struct program_parameters {
 };
 
 
+void show_prog_banner(void);
+
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   struct program_options *prog_opts,
 				   struct program_parameters *prog_parms,
@@ -279,6 +283,7 @@ int main(int argc, char *argv[])
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
+	show_prog_banner();
 
 	rc_mode = get_prog_parms(argc, argv, &prog_opts, &prog_parms,
 								err_str, 0);
@@ -329,6 +334,15 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 		break;
 	}
+
+}
+
+
+void show_prog_banner(void)
+{
+
+
+	log_msg(LOG_SEV_INFO, "replicast v%1.1f\n", replicast_version);
 
 }
 
