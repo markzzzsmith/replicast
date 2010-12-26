@@ -183,7 +183,7 @@ void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
 
 
-void program_exit(void);
+void cleanup_prog_parms(struct program_parameters *prog_parms);
 
 void close_sockets(void);
 
@@ -325,6 +325,7 @@ int main(int argc, char *argv[])
 				    prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_ERROR:
+		cleanup_prog_parms(&prog_parms);
 		exit(EXIT_FAILURE);
 		break;
 	}
@@ -1072,20 +1073,18 @@ void log_opt_error(enum OPT_ERR option_err,
 }
 
 
-void program_exit(void)
+void cleanup_prog_parms(struct program_parameters *prog_parms)
 {
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	close_sockets();
-
-	if (prog_parms.inet_tx_sock_parms.mc_dests != NULL) {
-		free(prog_parms.inet_tx_sock_parms.mc_dests);
+	if (prog_parms->inet_tx_sock_parms.mc_dests != NULL) {
+		free(prog_parms->inet_tx_sock_parms.mc_dests);
 	}
 
-	if (prog_parms.inet6_tx_sock_parms.mc_dests != NULL) {
-		free(prog_parms.inet6_tx_sock_parms.mc_dests);
+	if (prog_parms->inet6_tx_sock_parms.mc_dests != NULL) {
+		free(prog_parms->inet6_tx_sock_parms.mc_dests);
 	}
 
 	log_debug_med("%s() exit\n", __func__);
