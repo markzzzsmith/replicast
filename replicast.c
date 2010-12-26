@@ -17,7 +17,6 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include "global.h"
 #include "log.h"
 #include "inetaddr.h"
 
@@ -184,6 +183,8 @@ void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
 
 
+void program_exit(void);
+
 void close_sockets(void);
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
@@ -275,8 +276,6 @@ int main(int argc, char *argv[])
 	char *err_str = NULL;
 	enum REPLICAST_MODE rc_mode;
 
-
-	atexit(close_sockets);
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
@@ -1073,14 +1072,39 @@ void log_opt_error(enum OPT_ERR option_err,
 }
 
 
+void program_exit(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close_sockets();
+
+	if (prog_parms.inet_tx_sock_parms.mc_dests != NULL) {
+		free(prog_parms.inet_tx_sock_parms.mc_dests);
+	}
+
+	if (prog_parms.inet6_tx_sock_parms.mc_dests != NULL) {
+		free(prog_parms.inet6_tx_sock_parms.mc_dests);
+	}
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
 void close_sockets(void)
 {
 
+
+	log_debug_med("%s() entry\n", __func__);
 
 	close_inet_rx_mc_sock(inet_in_sock_fd);
 	close_inet6_rx_mc_sock(inet6_in_sock_fd);
 	close_inet_tx_mc_sock(inet_out_sock_fd);
 	close_inet6_tx_mc_sock(inet6_out_sock_fd);
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
