@@ -22,6 +22,7 @@
 
 
 const float replicast_version = 0.1;
+const char *program_name = "replicast";
 
 enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
@@ -189,7 +190,6 @@ void log_opt_error(enum OPT_ERR option_err,
 
 void cleanup_prog_parms(struct program_parameters *prog_parms);
 
-void close_sockets(void);
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
@@ -229,6 +229,18 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
 
+void daemonise(void);
+
+void create_child_process(void);
+
+void create_new_session(void);
+
+void change_to_rootdir(void);
+
+void close_stdfiles(void);
+
+void install_sigterm_handler(void);
+
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
 			 const struct in_addr in_intf_addr);
@@ -265,6 +277,7 @@ int inet6_tx_mcast(const int sock_fd,
  		   const struct sockaddr_in6 inet6_mc_dests[],
 		   const unsigned int mc_dests_num);
 
+void close_sockets(void);
 
 int inet_in_sock_fd = -1;
 int inet6_in_sock_fd = -1;
@@ -342,7 +355,7 @@ void show_prog_banner(void)
 {
 
 
-	log_msg(LOG_SEV_INFO, "replicast v%1.1f\n", replicast_version);
+	log_msg(LOG_SEV_INFO, "%s v%1.1f\n", program_name, replicast_version);
 
 }
 
@@ -1106,22 +1119,6 @@ void cleanup_prog_parms(struct program_parameters *prog_parms)
 }
 
 
-void close_sockets(void)
-{
-
-
-	log_debug_med("%s() entry\n", __func__);
-
-	close_inet_rx_mc_sock(inet_in_sock_fd);
-	close_inet6_rx_mc_sock(inet6_in_sock_fd);
-	close_inet_tx_mc_sock(inet_out_sock_fd);
-	close_inet6_tx_mc_sock(inet6_out_sock_fd);
-
-	log_debug_med("%s() exit\n", __func__);
-
-}
-
-
 void inet_to_inet_mcast(int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
@@ -1144,6 +1141,8 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
+
+	daemonise();
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1183,6 +1182,8 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
+
+	daemonise();
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1232,6 +1233,8 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	daemonise();
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		if (rx_pkt_len > 0) {
@@ -1272,6 +1275,8 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	daemonise();
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1310,6 +1315,8 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
+
+	daemonise();
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1356,6 +1363,8 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	daemonise();
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		if (rx_pkt_len > 0) {
@@ -1377,9 +1386,116 @@ void exit_errno(const char *func_name, const unsigned int linenum, int errnum)
 
 	log_debug("%s() entry\n", __func__);
 
-	fprintf(stderr, "%s():%d error: %s\n", func_name, linenum,
+	log_msg(LOG_SEV_ERR, "%s():%d error: %s\n", func_name, linenum,
 		strerror(errnum));
+
+	log_debug("%s() exit\n", __func__);
+
 	exit(EXIT_FAILURE);
+
+}
+
+
+void daemonise(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	create_child_process();
+
+	create_new_session();
+
+	change_to_rootdir();
+
+	log_open(LOG_DEST_SYSLOG, program_name, LOG_SYSLOG_DAEMON, NULL, NULL,
+		 NULL, NULL);
+
+	close_stdfiles();
+
+	install_sigterm_handler();
+
+	show_prog_banner();
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void create_child_process(void)
+{
+	pid_t pid;
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	pid = fork();
+	if (pid < 0) {
+		exit_errno(__func__, __LINE__, errno);
+		exit(EXIT_FAILURE);
+	} else if (pid > 0) {
+		exit(EXIT_SUCCESS);
+	}
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void create_new_session(void)
+{
+	pid_t sid;
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	sid = setsid();
+	if (sid < 0) {
+		exit_errno(__func__, __LINE__, errno);
+		exit(EXIT_FAILURE);
+	}
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void change_to_rootdir(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	if ((chdir("/")) < 0) {
+		exit_errno(__func__, __LINE__, errno);
+		exit(EXIT_FAILURE);
+	}
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void close_stdfiles(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);	
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void install_sigterm_handler(void)
+{
+
+
+
 
 }
 
@@ -1395,7 +1511,7 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 	struct ip_mreq ip_mcast_req;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	/* socket() */
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -1430,6 +1546,8 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 		return -1;
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 	return sock_fd;
 
 }
@@ -1461,13 +1579,14 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	struct ipv6_mreq ipv6_mcast_req;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	/* socket() */
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
 		log_debug_low("%s(): socket() == %d\n", __func__, sock_fd);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
 		return -1;
 	}
 
@@ -1478,6 +1597,7 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 		log_debug_low("%s(): setsockopt(SO_REUSEADDR) == %d\n",
 			__func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
 		return -1;
 	}
 
@@ -1494,6 +1614,7 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	if (ret == -1) {
 		log_debug_low("%s(): bind() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
 		return -1;
 	}
 
@@ -1506,8 +1627,11 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 		log_debug_low("%s(): setsockopt(IPV6_ADD_MEMBERSHIP) == %d\n",
 			__func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
 		return -1;
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 	return sock_fd;
 
@@ -1539,7 +1663,7 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 	int ret;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
@@ -1572,6 +1696,8 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 		return -1;
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 	return sock_fd;
 
 }
@@ -1600,7 +1726,7 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 	int ret;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
@@ -1626,6 +1752,8 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 	if (ret == -1) {
 		return -1;
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 	return sock_fd;
 			
@@ -1658,7 +1786,7 @@ int inet_tx_mcast(const int sock_fd,
 	ssize_t ret;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	for (i = 0; i < mc_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
@@ -1670,6 +1798,8 @@ int inet_tx_mcast(const int sock_fd,
 		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 	return tx_success;
 
@@ -1687,7 +1817,7 @@ int inet6_tx_mcast(const int sock_fd,
 	ssize_t ret;
 
 
-	log_debug("%s() entry\n", __func__);
+	log_debug_med("%s() entry\n", __func__);
 
 	for (i = 0; i < mc_dests_num; i++) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
@@ -1700,6 +1830,24 @@ int inet6_tx_mcast(const int sock_fd,
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
 	}
 
+	log_debug_med("%s() exit\n", __func__);
+
 	return tx_success;
+
+}
+
+
+void close_sockets(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close_inet_rx_mc_sock(inet_in_sock_fd);
+	close_inet6_rx_mc_sock(inet6_in_sock_fd);
+	close_inet_tx_mc_sock(inet_out_sock_fd);
+	close_inet6_tx_mc_sock(inet6_out_sock_fd);
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
