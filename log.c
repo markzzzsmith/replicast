@@ -215,10 +215,12 @@ void log_close(void)
 
 
 	if (log_dests & LOG_DEST_FILE) {
+		log_dests &= ~LOG_DEST_FILE;
 		log_file_close();
 	}
 
 	if (log_dests & LOG_DEST_SYSLOG) {
+		log_dests &= ~LOG_DEST_SYSLOG;
 		log_syslog_close();
 	}
 
