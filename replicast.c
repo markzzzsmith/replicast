@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -27,6 +28,7 @@ const char *program_name = "replicast";
 const size_t syslog_ident_len = 100;
 char syslog_ident[syslog_ident_len];
 
+struct sigaction sigterm_action;
 
 enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
@@ -245,7 +247,9 @@ void open_syslog_log(void);
 
 void close_stdfiles(void);
 
-void install_sigterm_handler(void);
+void install_sigterm_handler(struct sigaction *sigterm_action);
+
+void sigterm_handler(int signum);
 
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
@@ -1418,7 +1422,7 @@ void daemonise(void)
 
 	close_stdfiles();
 
-	install_sigterm_handler();
+	install_sigterm_handler(&sigterm_action);
 
 	show_prog_banner();
 
@@ -1514,11 +1518,38 @@ void close_stdfiles(void)
 }
 
 
-void install_sigterm_handler(void)
+void install_sigterm_handler(struct sigaction *sigterm_action)
 {
 
 
+	log_debug_med("%s() entry\n", __func__);
 
+	sigterm_action->sa_handler = sigterm_handler;
+        sigemptyset(&(sigterm_action->sa_mask));
+        sigterm_action->sa_flags = 0;
+
+        sigaction(SIGTERM, sigterm_action, NULL);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void sigterm_handler(int signum)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close_sockets();
+
+	cleanup_prog_parms(&prog_parms);
+
+	log_debug_med("%s() exit\n", __func__);
+
+	log_close();
+
+	exit(EXIT_SUCCESS);
 
 }
 
