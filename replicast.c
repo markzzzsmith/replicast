@@ -24,6 +24,10 @@
 const float replicast_version = 0.1;
 const char *program_name = "replicast";
 
+const size_t syslog_ident_len = 100;
+char syslog_ident[syslog_ident_len];
+
+
 enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
 };
@@ -236,6 +240,8 @@ void create_child_process(void);
 void create_new_session(void);
 
 void change_to_rootdir(void);
+
+void open_syslog_log(void);
 
 void close_stdfiles(void);
 
@@ -1408,8 +1414,7 @@ void daemonise(void)
 
 	change_to_rootdir();
 
-	log_open(LOG_DEST_SYSLOG, program_name, LOG_SYSLOG_DAEMON, NULL, NULL,
-		 NULL, NULL);
+	open_syslog_log();
 
 	close_stdfiles();
 
@@ -1432,7 +1437,6 @@ void create_child_process(void)
 	pid = fork();
 	if (pid < 0) {
 		exit_errno(__func__, __LINE__, errno);
-		exit(EXIT_FAILURE);
 	} else if (pid > 0) {
 		exit(EXIT_SUCCESS);
 	}
@@ -1452,7 +1456,6 @@ void create_new_session(void)
 	sid = setsid();
 	if (sid < 0) {
 		exit_errno(__func__, __LINE__, errno);
-		exit(EXIT_FAILURE);
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -1468,8 +1471,28 @@ void change_to_rootdir(void)
 
 	if ((chdir("/")) < 0) {
 		exit_errno(__func__, __LINE__, errno);
-		exit(EXIT_FAILURE);
 	}
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void open_syslog_log(void)
+{
+	pid_t daemon_pid;
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	daemon_pid = getpid();
+
+	snprintf(syslog_ident, syslog_ident_len, "%s[%d]", program_name,
+		daemon_pid);
+	syslog_ident[syslog_ident_len - 1] = '\0';
+
+	log_open(LOG_DEST_SYSLOG, syslog_ident, LOG_SYSLOG_DAEMON, NULL, NULL,
+		 NULL, NULL);
 
 	log_debug_med("%s() exit\n", __func__);
 
