@@ -128,6 +128,8 @@ struct program_options {
 	unsigned int unknown_opt_set;
 	char *unknown_opt_str;
 
+	unsigned int no_daemon_set;
+
 	unsigned int inet_rx_sock_mcgroup_set;
 	char *inet_rx_sock_mcgroup_str;
 
@@ -153,6 +155,7 @@ struct program_options {
 
 
 struct program_parameters {
+	unsigned int become_daemon;
 	struct inet_rx_mc_sock_params inet_rx_sock_parms;
 	struct inet_tx_mc_sock_params inet_tx_sock_parms;
 	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
@@ -197,17 +200,20 @@ void log_opt_error(enum OPT_ERR option_err,
 void cleanup_prog_parms(struct program_parameters *prog_parms);
 
 
-void inet_to_inet_mcast(int *inet_in_sock_fd,
+void inet_to_inet_mcast(unsigned int become_daemon,
+			int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
 			struct inet_tx_mc_sock_params tx_sock_parms);
 
-void inet_to_inet6_mcast(int *inet_in_sock_fd,
-			struct inet_rx_mc_sock_params rx_sock_parms,
-			int *inet6_out_sock_fd,
-			struct inet6_tx_mc_sock_params tx_sock_parms);
+void inet_to_inet6_mcast(unsigned int become_daemon,
+			 int *inet_in_sock_fd,
+			 struct inet_rx_mc_sock_params rx_sock_parms,
+			 int *inet6_out_sock_fd,
+			 struct inet6_tx_mc_sock_params tx_sock_parms);
 
-void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet_inet6_mcast(unsigned int become_daemon,
+			      int *inet_in_sock_fd,
 			      struct inet_rx_mc_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
 			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
@@ -215,17 +221,20 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 			      struct inet6_tx_mc_sock_params
 							inet6_tx_sock_parms);
 
-void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet6_mcast(unsigned int become_daemon,
+			  int *inet6_in_sock_fd,
 			  struct inet6_rx_mc_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
 			  struct inet6_tx_mc_sock_params tx_sock_parms);
 
-void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_mcast(unsigned int become_daemon,
+			 int *inet6_in_sock_fd,
 			 struct inet6_rx_mc_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
 			 struct inet_tx_mc_sock_params tx_sock_parms);
 
-void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
+			       int *inet6_in_sock_fd,
 			       struct inet6_rx_mc_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
 			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
@@ -313,19 +322,22 @@ int main(int argc, char *argv[])
 
 	switch (rc_mode) {
 	case RCMODE_INET_TO_INET:
-		inet_to_inet_mcast(&inet_in_sock_fd,
+		inet_to_inet_mcast(prog_parms.become_daemon,
+				   &inet_in_sock_fd,
 				   prog_parms.inet_rx_sock_parms,
 				   &inet_out_sock_fd,
 				   prog_parms.inet_tx_sock_parms);
 		break;
 	case RCMODE_INET_TO_INET6:
-		inet_to_inet6_mcast(&inet_in_sock_fd,
+		inet_to_inet6_mcast(prog_parms.become_daemon,
+				    &inet_in_sock_fd,
 				    prog_parms.inet_rx_sock_parms,
 				    &inet6_out_sock_fd,
 				    prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET_TO_INET_INET6:
-		inet_to_inet_inet6_mcast(&inet_in_sock_fd,
+		inet_to_inet_inet6_mcast(prog_parms.become_daemon,
+					 &inet_in_sock_fd,
 					 prog_parms.inet_rx_sock_parms,
 					 &inet_out_sock_fd,
 					 prog_parms.inet_tx_sock_parms,
@@ -333,19 +345,22 @@ int main(int argc, char *argv[])
 					 prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET6:
-		inet6_to_inet6_mcast(&inet6_in_sock_fd,
+		inet6_to_inet6_mcast(prog_parms.become_daemon,
+				     &inet6_in_sock_fd,
 				     prog_parms.inet6_rx_sock_parms,
 				     &inet6_out_sock_fd,
 				     prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET:
-		inet6_to_inet_mcast(&inet6_in_sock_fd,
+		inet6_to_inet_mcast(prog_parms.become_daemon,
+				    &inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &inet_out_sock_fd,
 				    prog_parms.inet_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET_INET6:
-		inet6_to_inet_inet6_mcast(&inet6_in_sock_fd,
+		inet6_to_inet_inet6_mcast(prog_parms.become_daemon,
+				    &inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &inet_out_sock_fd,
 				    prog_parms.inet_tx_sock_parms,
@@ -491,6 +506,8 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->unknown_opt_set = 0;
 	prog_opts->unknown_opt_str = NULL;
 
+	prog_opts->no_daemon_set = 0;
+
 	prog_opts->inet_rx_sock_mcgroup_set = 0;
 	prog_opts->inet_rx_sock_mcgroup_str = NULL;
 
@@ -524,6 +541,8 @@ void init_prog_parms(struct program_parameters *prog_parms)
 
 	log_debug_med("%s() entry\n", __func__);
 
+	prog_parms->become_daemon = 1;
+
 	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
 	prog_parms->inet_rx_sock_parms.port = 0;
 	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY;
@@ -555,6 +574,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 {
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
+		CMDLINE_OPT_NODAEMON,
 		CMDLINE_OPT_4SRCGRP,
 		CMDLINE_OPT_4TTL,
 		CMDLINE_OPT_4LOOP,
@@ -568,6 +588,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	};
 	struct option cmdline_opts[] = {
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
+		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
 		{"4srcgrp", required_argument, NULL, CMDLINE_OPT_4SRCGRP},
 		{"4ttl", required_argument, NULL, CMDLINE_OPT_4TTL},
 		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
@@ -596,6 +617,11 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_HELP\n", __func__);
 			prog_opts->help_set = 1;
+			break;
+		case CMDLINE_OPT_NODAEMON:
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_NODAEMON\n", __func__);
+			prog_opts->no_daemon_set = 1;
 			break;
 		case CMDLINE_OPT_4SRCGRP:
 			log_debug_low("%s: getopt_long_only() = "
@@ -781,6 +807,11 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 
 
 	log_debug_med("%s() entry\n", __func__);
+
+	if (prog_opts->no_daemon_set) {
+		log_debug_low("%s() prog_opts->no_daemon_set\n", __func__);
+		prog_parms->become_daemon = 0;
+	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
 		log_debug_low("%s() prog_opts->inet_rx_sock_mcgroup_set\n",
@@ -1129,7 +1160,8 @@ void cleanup_prog_parms(struct program_parameters *prog_parms)
 }
 
 
-void inet_to_inet_mcast(int *inet_in_sock_fd,
+void inet_to_inet_mcast(unsigned int become_daemon,
+			int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
 			struct inet_tx_mc_sock_params tx_sock_parms)
@@ -1152,7 +1184,9 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1170,10 +1204,11 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet_to_inet6_mcast(int *inet_in_sock_fd,
-			struct inet_rx_mc_sock_params rx_sock_parms,
-			int *inet6_out_sock_fd,
-			struct inet6_tx_mc_sock_params tx_sock_parms)
+void inet_to_inet6_mcast(unsigned int become_daemon,
+			 int *inet_in_sock_fd,
+			 struct inet_rx_mc_sock_params rx_sock_parms,
+			 int *inet6_out_sock_fd,
+			 struct inet6_tx_mc_sock_params tx_sock_parms)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
@@ -1193,7 +1228,9 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1211,7 +1248,8 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet_inet6_mcast(unsigned int become_daemon,
+			      int *inet_in_sock_fd,
 			      struct inet_rx_mc_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
 			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
@@ -1243,7 +1281,9 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1262,7 +1302,8 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet6_mcast(unsigned int become_daemon,
+			  int *inet6_in_sock_fd,
 			  struct inet6_rx_mc_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
 			  struct inet6_tx_mc_sock_params tx_sock_parms)
@@ -1285,7 +1326,9 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1303,7 +1346,8 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 }
 
 
-void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_mcast(unsigned int become_daemon,
+			 int *inet6_in_sock_fd,
 			 struct inet6_rx_mc_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
 			 struct inet_tx_mc_sock_params tx_sock_parms)
@@ -1326,7 +1370,9 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1341,7 +1387,8 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 
 }
 
-void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
+			       int *inet6_in_sock_fd,
 			       struct inet6_rx_mc_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
 			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
@@ -1373,7 +1420,9 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	daemonise();
+	if (become_daemon) {
+		daemonise();
+	}
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
