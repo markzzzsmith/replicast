@@ -114,6 +114,12 @@ struct inet6_tx_mc_sock_params {
 	unsigned int mc_dests_num;
 };
 
+struct packet_counters {
+	unsigned long long inet_in_pkts;
+	unsigned long long inet6_in_pkts;
+	unsigned long long inet_out_pkts;
+	unsigned long long inet6_out_pkts;
+};
 
 struct program_options {
 	unsigned int help_set;
@@ -193,18 +199,27 @@ void cleanup_prog_parms(struct program_parameters *prog_parms);
 
 
 void inet_to_inet_mcast(unsigned int become_daemon,
+			struct sigaction *sigterm_action,
+			struct sigaction *sigusr1_action,
+			struct packet_counters *pkt_counters,
 			int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
 			struct inet_tx_mc_sock_params tx_sock_parms);
 
 void inet_to_inet6_mcast(unsigned int become_daemon,
+			 struct sigaction *sigterm_action,
+			 struct sigaction *sigusr1_action,
+			 struct packet_counters *pkt_counters,
 			 int *inet_in_sock_fd,
 			 struct inet_rx_mc_sock_params rx_sock_parms,
 			 int *inet6_out_sock_fd,
 			 struct inet6_tx_mc_sock_params tx_sock_parms);
 
 void inet_to_inet_inet6_mcast(unsigned int become_daemon,
+			      struct sigaction *sigterm_action,
+			      struct sigaction *sigusr1_action,
+			      struct packet_counters *pkt_counters,
 			      int *inet_in_sock_fd,
 			      struct inet_rx_mc_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
@@ -214,18 +229,27 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 							inet6_tx_sock_parms);
 
 void inet6_to_inet6_mcast(unsigned int become_daemon,
+			  struct sigaction *sigterm_action,
+			  struct sigaction *sigusr1_action,
+			  struct packet_counters *pkt_counters,
 			  int *inet6_in_sock_fd,
 			  struct inet6_rx_mc_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
 			  struct inet6_tx_mc_sock_params tx_sock_parms);
 
 void inet6_to_inet_mcast(unsigned int become_daemon,
+			 struct sigaction *sigterm_action,
+			 struct sigaction *sigusr1_action,
+			 struct packet_counters *pkt_counters,
 			 int *inet6_in_sock_fd,
 			 struct inet6_rx_mc_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
 			 struct inet_tx_mc_sock_params tx_sock_parms);
 
 void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
+			       struct sigaction *sigterm_action,
+			       struct sigaction *sigusr1_action,
+			       struct packet_counters *pkt_counters,
 			       int *inet6_in_sock_fd,
 			       struct inet6_rx_mc_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
@@ -235,6 +259,8 @@ void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
 							inet6_tx_sock_parms);
 
 void exit_errno(const char *func_name, const unsigned int linenum, int errnum);
+
+void init_packet_counters(struct packet_counters *pkt_counters);
 
 void daemonise(void);
 
@@ -252,11 +278,13 @@ void install_sigterm_handler(struct sigaction *sigterm_action);
 
 void install_sigint_handler(struct sigaction *sigint_action);
 
-void exit_program(void);
+void install_sigusr1_handler(struct sigaction *sigusr1_action);
 
 void sigterm_handler(int signum);
 
 void sigint_handler(int signum);
+
+void sigusr1_handler(int signum);
 
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
@@ -299,6 +327,9 @@ void close_sockets(const int inet_in_sock_fd,
 		   const int inet6_in_sock_fd,
 		   const int inet6_out_sock_fd);
 
+void log_packet_counters(const struct packet_counters *pkt_counters);
+
+void exit_program(void);
 
 int inet_in_sock_fd = -1;
 int inet6_in_sock_fd = -1;
@@ -311,10 +342,14 @@ const float replicast_version = 0.1;
 const char *program_name = "replicast";
 
 const size_t syslog_ident_len = 100;
-char syslog_ident[syslog_ident_len];
+//char syslog_ident[syslog_ident_len];
+char syslog_ident[100];
 
 struct sigaction sigterm_action;
 struct sigaction sigint_action;
+struct sigaction sigusr1_action;
+
+struct packet_counters pkt_counters;
 
 
 int main(int argc, char *argv[])
@@ -333,21 +368,35 @@ int main(int argc, char *argv[])
 
 	switch (rc_mode) {
 	case RCMODE_INET_TO_INET:
+		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET\n", __func__);
 		inet_to_inet_mcast(prog_parms.become_daemon,
+				   &sigterm_action,
+				   &sigusr1_action,
+				   &pkt_counters,
 				   &inet_in_sock_fd,
 				   prog_parms.inet_rx_sock_parms,
 				   &inet_out_sock_fd,
 				   prog_parms.inet_tx_sock_parms);
 		break;
 	case RCMODE_INET_TO_INET6:
+		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET6\n",
+								__func__);
 		inet_to_inet6_mcast(prog_parms.become_daemon,
+				    &sigterm_action,
+				    &sigusr1_action,
+				    &pkt_counters,
 				    &inet_in_sock_fd,
 				    prog_parms.inet_rx_sock_parms,
 				    &inet6_out_sock_fd,
 				    prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET_TO_INET_INET6:
+		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET_INET6\n",
+								__func__);
 		inet_to_inet_inet6_mcast(prog_parms.become_daemon,
+				         &sigterm_action,
+				         &sigusr1_action,
+				         &pkt_counters,
 					 &inet_in_sock_fd,
 					 prog_parms.inet_rx_sock_parms,
 					 &inet_out_sock_fd,
@@ -356,21 +405,36 @@ int main(int argc, char *argv[])
 					 prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET6:
+		log_debug_med("%s() rc_mode = RCMODE_INET6_TO_INET6\n",
+								__func__);
 		inet6_to_inet6_mcast(prog_parms.become_daemon,
+				     &sigterm_action,
+				     &sigusr1_action,
+				     &pkt_counters,
 				     &inet6_in_sock_fd,
 				     prog_parms.inet6_rx_sock_parms,
 				     &inet6_out_sock_fd,
 				     prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET:
+		log_debug_med("%s() rc_mode = RCMODE_INET6_TO_INET\n",
+								__func__);
 		inet6_to_inet_mcast(prog_parms.become_daemon,
+				    &sigterm_action,
+				    &sigusr1_action,
+				    &pkt_counters,
 				    &inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &inet_out_sock_fd,
 				    prog_parms.inet_tx_sock_parms);
 		break;
 	case RCMODE_INET6_TO_INET_INET6:
+		log_debug_med("%s() rc_mode = RCMODE_INET6_TO_INET_INET6\n",
+								__func__);
 		inet6_to_inet_inet6_mcast(prog_parms.become_daemon,
+				    &sigterm_action,
+				    &sigusr1_action,
+				    &pkt_counters,
 				    &inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &inet_out_sock_fd,
@@ -379,10 +443,14 @@ int main(int argc, char *argv[])
 				    prog_parms.inet6_tx_sock_parms);
 		break;
 	case RCMODE_ERROR:
+		log_debug_med("%s() rc_mode = RCMODE_ERROR\n",
+								__func__);
 		cleanup_prog_parms(&prog_parms);
 		exit(EXIT_FAILURE);
 		break;
 	}
+
+	return EXIT_FAILURE;
 
 }
 
@@ -437,7 +505,14 @@ enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 		log_opt_error(OE_NO_DST_GRPS, NULL);
 		break;
 	case VPO_MODE_INETINETINET6:
-		rcmode = RCMODE_INET6_TO_INET_INET6;
+		rcmode = RCMODE_INET_TO_INET_INET6;
+		vpo_values_ret = validate_prog_opts_values(prog_opts,
+							   prog_parms,
+							   err_str,
+							   err_str_size);		
+		if (vpo_values_ret == -1) {
+			rcmode = RCMODE_ERROR;
+		}
 		break;
 	case VPO_MODE_INETINET:
 		rcmode = RCMODE_INET_TO_INET;
@@ -1172,6 +1247,9 @@ void cleanup_prog_parms(struct program_parameters *prog_parms)
 
 
 void inet_to_inet_mcast(unsigned int become_daemon,
+			struct sigaction *sigterm_action,
+			struct sigaction *sigusr1_action,
+			struct packet_counters *pkt_counters,
 			int *inet_in_sock_fd,
 			struct inet_rx_mc_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
@@ -1195,6 +1273,12 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1204,11 +1288,15 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
-		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
+			pkt_counters->inet_out_pkts +=
+						tx_sock_parms.mc_dests_num;
 		}
 	}
 
@@ -1218,6 +1306,9 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 
 
 void inet_to_inet6_mcast(unsigned int become_daemon,
+			 struct sigaction *sigterm_action,
+			 struct sigaction *sigusr1_action,
+			 struct packet_counters *pkt_counters,
 			 int *inet_in_sock_fd,
 			 struct inet_rx_mc_sock_params rx_sock_parms,
 			 int *inet6_out_sock_fd,
@@ -1241,6 +1332,12 @@ void inet_to_inet6_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1250,11 +1347,15 @@ void inet_to_inet6_mcast(unsigned int become_daemon,
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
-		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet_in_pkts++;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
+			pkt_counters->inet6_out_pkts +=
+						tx_sock_parms.mc_dests_num;
 		}
 	}
 
@@ -1264,6 +1365,9 @@ void inet_to_inet6_mcast(unsigned int become_daemon,
 
 
 void inet_to_inet_inet6_mcast(unsigned int become_daemon,
+			      struct sigaction *sigterm_action,
+			      struct sigaction *sigusr1_action,
+			      struct packet_counters *pkt_counters,
 			      int *inet_in_sock_fd,
 			      struct inet_rx_mc_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
@@ -1296,6 +1400,12 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1304,13 +1414,21 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms.mc_dests,
 				inet_tx_sock_parms.mc_dests_num);
+			pkt_counters->inet_out_pkts +=
+					inet_tx_sock_parms.mc_dests_num;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms.mc_dests,
 				inet6_tx_sock_parms.mc_dests_num);
+			pkt_counters->inet6_out_pkts +=
+					inet6_tx_sock_parms.mc_dests_num;
 		}
 	}
 
@@ -1320,6 +1438,9 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 
 
 void inet6_to_inet6_mcast(unsigned int become_daemon,
+			  struct sigaction *sigterm_action,
+			  struct sigaction *sigusr1_action,
+			  struct packet_counters *pkt_counters,
 			  int *inet6_in_sock_fd,
 			  struct inet6_rx_mc_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
@@ -1343,6 +1464,12 @@ void inet6_to_inet6_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1352,11 +1479,15 @@ void inet6_to_inet6_mcast(unsigned int become_daemon,
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
-		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet6_in_pkts++;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
+			pkt_counters->inet6_out_pkts +=
+						tx_sock_parms.mc_dests_num;
 		}
 	}
 
@@ -1366,6 +1497,9 @@ void inet6_to_inet6_mcast(unsigned int become_daemon,
 
 
 void inet6_to_inet_mcast(unsigned int become_daemon,
+			 struct sigaction *sigterm_action,
+			 struct sigaction *sigusr1_action,
+			 struct packet_counters *pkt_counters,
 			 int *inet6_in_sock_fd,
 			 struct inet6_rx_mc_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
@@ -1389,6 +1523,12 @@ void inet6_to_inet_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1398,17 +1538,24 @@ void inet6_to_inet_mcast(unsigned int become_daemon,
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
-		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet6_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests,
 				tx_sock_parms.mc_dests_num);
+			pkt_counters->inet_out_pkts +=
+						tx_sock_parms.mc_dests_num;
 		}
 	}
 
 }
 
 void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
+			       struct sigaction *sigterm_action,
+			       struct sigaction *sigusr1_action,
+			       struct packet_counters *pkt_counters,
 			       int *inet6_in_sock_fd,
 			       struct inet6_rx_mc_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
@@ -1441,6 +1588,12 @@ void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
+	init_packet_counters(pkt_counters);
+
+	install_sigusr1_handler(sigusr1_action);
+
+	install_sigterm_handler(sigterm_action);
+
 	if (become_daemon) {
 		daemonise();
 	} else {
@@ -1449,13 +1602,21 @@ void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
+		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
+		log_debug_low("%s(): errno == %d, %s\n", __func__, errno,
+							strerror(errno));
 		if (rx_pkt_len > 0) {
+			pkt_counters->inet6_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms.mc_dests,
 				inet_tx_sock_parms.mc_dests_num);
+			pkt_counters->inet_out_pkts +=
+						inet_tx_sock_parms.mc_dests_num;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms.mc_dests,
 				inet6_tx_sock_parms.mc_dests_num);
+			pkt_counters->inet6_out_pkts +=
+					inet6_tx_sock_parms.mc_dests_num;
 		}
 	}
 
@@ -1478,6 +1639,18 @@ void exit_errno(const char *func_name, const unsigned int linenum, int errnum)
 }
 
 
+void init_packet_counters(struct packet_counters *pkt_counters)
+{
+
+
+	pkt_counters->inet_in_pkts = 0;
+	pkt_counters->inet_out_pkts = 0;
+	pkt_counters->inet6_in_pkts = 0;
+	pkt_counters->inet6_out_pkts = 0;
+
+}
+
+
 void daemonise(void)
 {
 
@@ -1493,8 +1666,6 @@ void daemonise(void)
 	open_syslog_log();
 
 	close_stdfiles();
-
-	install_sigterm_handler(&sigterm_action);
 
 	show_prog_banner();
 
@@ -1623,22 +1794,19 @@ void install_sigint_handler(struct sigaction *sigint_action)
 }
 
 
-void exit_program(void)
+void install_sigusr1_handler(struct sigaction *sigusr1_action)
 {
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	close_sockets(inet_in_sock_fd, inet_out_sock_fd, inet6_in_sock_fd,
-		      inet6_out_sock_fd);
+	sigusr1_action->sa_handler = sigusr1_handler;
+        sigemptyset(&(sigusr1_action->sa_mask));
+        sigusr1_action->sa_flags = 0;
 
-	cleanup_prog_parms(&prog_parms);
+        sigaction(SIGUSR1, sigusr1_action, NULL);
 
 	log_debug_med("%s() exit\n", __func__);
-
-	log_close();
-
-	exit(EXIT_SUCCESS);
 
 }
 
@@ -1663,6 +1831,20 @@ void sigint_handler(int signum)
 	log_debug_med("%s() entry\n", __func__);
 
 	exit_program();
+
+	log_debug_med("%s() exit\n", __func__);
+
+
+}
+
+
+void sigusr1_handler(int signum)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_packet_counters(&pkt_counters);
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -2022,5 +2204,44 @@ void close_sockets(const int inet_in_sock_fd,
 	close_inet6_tx_mc_sock(inet6_out_sock_fd);
 
 	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void log_packet_counters(const struct packet_counters *pkt_counters)
+{
+
+
+	log_msg(LOG_SEV_INFO, "inet pkts in: %lld, ",
+						pkt_counters->inet_in_pkts);
+	log_msg(LOG_SEV_INFO, "inet pkts out: %lld, ",
+						pkt_counters->inet_out_pkts);
+
+	log_msg(LOG_SEV_INFO, "inet6 pkts in: %lld, ",
+						pkt_counters->inet6_in_pkts);
+	log_msg(LOG_SEV_INFO, "inet6 pkts out: %lld\n",
+						pkt_counters->inet6_out_pkts);
+
+}
+
+
+void exit_program(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close_sockets(inet_in_sock_fd, inet_out_sock_fd, inet6_in_sock_fd,
+		      inet6_out_sock_fd);
+
+	log_packet_counters(&pkt_counters);
+
+	cleanup_prog_parms(&prog_parms);
+
+	log_debug_med("%s() exit\n", __func__);
+
+	log_close();
+
+	exit(EXIT_SUCCESS);
 
 }
