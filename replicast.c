@@ -22,14 +22,6 @@
 #include "inetaddr.h"
 
 
-const float replicast_version = 0.1;
-const char *program_name = "replicast";
-
-const size_t syslog_ident_len = 100;
-char syslog_ident[syslog_ident_len];
-
-struct sigaction sigterm_action;
-
 enum GLOBAL_DEFS {
 	PKT_BUF_SIZE = 0xffff,
 };
@@ -258,7 +250,13 @@ void close_stdfiles(void);
 
 void install_sigterm_handler(struct sigaction *sigterm_action);
 
+void install_sigint_handler(struct sigaction *sigint_action);
+
+void exit_program(void);
+
 void sigterm_handler(int signum);
+
+void sigint_handler(int signum);
 
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
@@ -296,7 +294,11 @@ int inet6_tx_mcast(const int sock_fd,
  		   const struct sockaddr_in6 inet6_mc_dests[],
 		   const unsigned int mc_dests_num);
 
-void close_sockets(void);
+void close_sockets(const int inet_in_sock_fd,
+		   const int inet_out_sock_fd,
+		   const int inet6_in_sock_fd,
+		   const int inet6_out_sock_fd);
+
 
 int inet_in_sock_fd = -1;
 int inet6_in_sock_fd = -1;
@@ -304,6 +306,15 @@ int inet_out_sock_fd = -1;
 int inet6_out_sock_fd = -1;
 
 struct program_parameters prog_parms;
+
+const float replicast_version = 0.1;
+const char *program_name = "replicast";
+
+const size_t syslog_ident_len = 100;
+char syslog_ident[syslog_ident_len];
+
+struct sigaction sigterm_action;
+struct sigaction sigint_action;
 
 
 int main(int argc, char *argv[])
@@ -1186,6 +1197,8 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1230,6 +1243,8 @@ void inet_to_inet6_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1283,6 +1298,8 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1328,6 +1345,8 @@ void inet6_to_inet6_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1372,6 +1391,8 @@ void inet6_to_inet_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1422,6 +1443,8 @@ void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
 
 	if (become_daemon) {
 		daemonise();
+	} else {
+		install_sigint_handler(&sigint_action);
 	}
 
 	for ( ;; ) {
@@ -1566,7 +1589,6 @@ void close_stdfiles(void)
 
 }
 
-
 void install_sigterm_handler(struct sigaction *sigterm_action)
 {
 
@@ -1584,13 +1606,31 @@ void install_sigterm_handler(struct sigaction *sigterm_action)
 }
 
 
-void sigterm_handler(int signum)
+void install_sigint_handler(struct sigaction *sigint_action)
 {
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	close_sockets();
+	sigint_action->sa_handler = sigint_handler;
+        sigemptyset(&(sigint_action->sa_mask));
+        sigint_action->sa_flags = 0;
+
+        sigaction(SIGINT, sigint_action, NULL);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void exit_program(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	close_sockets(inet_in_sock_fd, inet_out_sock_fd, inet6_in_sock_fd,
+		      inet6_out_sock_fd);
 
 	cleanup_prog_parms(&prog_parms);
 
@@ -1599,6 +1639,33 @@ void sigterm_handler(int signum)
 	log_close();
 
 	exit(EXIT_SUCCESS);
+
+}
+
+
+void sigterm_handler(int signum)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	exit_program();
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void sigint_handler(int signum)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	exit_program();
+
+	log_debug_med("%s() exit\n", __func__);
+
 
 }
 
@@ -1940,7 +2007,10 @@ int inet6_tx_mcast(const int sock_fd,
 }
 
 
-void close_sockets(void)
+void close_sockets(const int inet_in_sock_fd,
+		   const int inet_out_sock_fd,
+		   const int inet6_in_sock_fd,
+		   const int inet6_out_sock_fd)
 {
 
 
