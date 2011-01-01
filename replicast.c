@@ -1889,13 +1889,15 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 		return -1;
 	}
 
-	/* setsockopt() to join mcast group */
-	ip_mcast_req.imr_multiaddr = mc_group;
-	ip_mcast_req.imr_interface = in_intf_addr;
-	ret = setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-		&ip_mcast_req, sizeof(ip_mcast_req));
-	if (ret == -1) {
-		return -1;
+	if (IN_MULTICAST(&mc_group)) {
+		/* setsockopt() to join mcast group */
+		ip_mcast_req.imr_multiaddr = mc_group;
+		ip_mcast_req.imr_interface = in_intf_addr;
+		ret = setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+			&ip_mcast_req, sizeof(ip_mcast_req));
+		if (ret == -1) {
+			return -1;
+		}
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -1970,17 +1972,20 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 		return -1;
 	}
 
-	/* setsockopt() to join mcast group */
-	ipv6_mcast_req.ipv6mr_multiaddr = mc_group;
-	ipv6_mcast_req.ipv6mr_interface = in_intf_idx;
-	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
-		&ipv6_mcast_req, sizeof(ipv6_mcast_req));
-	if (ret == -1) {
-		log_debug_low("%s(): setsockopt(IPV6_ADD_MEMBERSHIP) == %d\n",
-			__func__, ret);
-		log_debug_low("%s(): errno == %d\n", __func__, errno);
-		log_debug_med("%s() exit\n", __func__);
-		return -1;
+	if (IN6_IS_ADDR_MULTICAST(&mc_group)) {
+		/* setsockopt() to join mcast group */
+		ipv6_mcast_req.ipv6mr_multiaddr = mc_group;
+		ipv6_mcast_req.ipv6mr_interface = in_intf_idx;
+		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
+			&ipv6_mcast_req, sizeof(ipv6_mcast_req));
+		if (ret == -1) {
+			log_debug_low("%s(): setsockopt(IPV6_ADD_MEMBERSHIP)",
+				__func__);
+			log_debug_low(" == %d\n", ret);
+			log_debug_low("%s(): errno == %d\n", __func__, errno);
+			log_debug_med("%s() exit\n", __func__);
+			return -1;
+		}
 	}
 
 	log_debug_med("%s() exit\n", __func__);
