@@ -161,7 +161,6 @@ struct program_parameters {
 };
 
 
-void show_prog_banner(void);
 
 enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
 				   struct program_options *prog_opts,
@@ -189,6 +188,10 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 			      struct program_parameters *prog_parms,
 			      char *err_str_parm,
 			      const unsigned int err_str_size);
+
+void show_prog_banner(void);
+
+void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms);
 
 
 void log_opt_error(enum OPT_ERR option_err,
@@ -361,8 +364,6 @@ int main(int argc, char *argv[])
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
 
-	show_prog_banner();
-
 	rc_mode = get_prog_parms(argc, argv, &prog_opts, &prog_parms,
 								err_str, 0);
 
@@ -451,15 +452,6 @@ int main(int argc, char *argv[])
 	}
 
 	return EXIT_FAILURE;
-
-}
-
-
-void show_prog_banner(void)
-{
-
-
-	log_msg(LOG_SEV_INFO, "%s v%1.1f\n", program_name, replicast_version);
 
 }
 
@@ -1166,12 +1158,54 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 }
 
 
+void show_prog_banner(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "%s v%1.1f\n", program_name, replicast_version);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
+{
+	char inet_addr_str[INET_ADDRSTRLEN];
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "inet rx socket: ");
+
+	inet_ntop(AF_INET, &inet_rx_parms->mc_group, inet_addr_str,
+		INET_ADDRSTRLEN);
+	inet_addr_str[INET_ADDRSTRLEN - 1] = '\0';
+	log_msg(LOG_SEV_INFO, "%s%%", inet_addr_str);
+
+	inet_ntop(AF_INET, &inet_rx_parms->in_intf_addr, inet_addr_str,
+		 INET_ADDRSTRLEN);
+	inet_addr_str[INET_ADDRSTRLEN - 1] = '\0';
+	log_msg(LOG_SEV_INFO, "%s:", inet_addr_str);
+
+	log_msg(LOG_SEV_INFO, "%d\n", inet_rx_parms->port);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm)
 {
 
 
 	log_debug_med("%s() entry\n", __func__);
+
+	show_prog_banner();
 
 	switch (option_err) {
 	case OE_UNKNOWN_OPT:
@@ -1285,6 +1319,10 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 		install_sigint_handler(&sigint_action);
 	}
 
+	show_prog_banner();
+
+	show_inet_rx_sock_parms(&rx_sock_parms);
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1343,6 +1381,10 @@ void inet_to_inet6_mcast(unsigned int become_daemon,
 	} else {
 		install_sigint_handler(&sigint_action);
 	}
+
+	show_prog_banner();
+
+	show_inet_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1412,6 +1454,10 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 		install_sigint_handler(&sigint_action);
 	}
 
+	show_prog_banner();
+
+	show_inet_rx_sock_parms(&rx_sock_parms);
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1476,6 +1522,8 @@ void inet6_to_inet6_mcast(unsigned int become_daemon,
 		install_sigint_handler(&sigint_action);
 	}
 
+	show_prog_banner();
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1534,6 +1582,8 @@ void inet6_to_inet_mcast(unsigned int become_daemon,
 	} else {
 		install_sigint_handler(&sigint_action);
 	}
+
+	show_prog_banner();
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1599,6 +1649,8 @@ void inet6_to_inet_inet6_mcast(unsigned int become_daemon,
 	} else {
 		install_sigint_handler(&sigint_action);
 	}
+
+	show_prog_banner();
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1666,8 +1718,6 @@ void daemonise(void)
 	open_syslog_log();
 
 	close_stdfiles();
-
-	show_prog_banner();
 
 	log_debug_med("%s() exit\n", __func__);
 
