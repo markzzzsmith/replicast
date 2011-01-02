@@ -1173,24 +1173,17 @@ void show_prog_banner(void)
 
 void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
 {
-	char inet_addr_str[INET_ADDRSTRLEN];
+	char aip_str[AIP_STR_INET_MAX_LEN + 1];
 
 
 	log_debug_med("%s() entry\n", __func__);
 
 	log_msg(LOG_SEV_INFO, "inet rx socket: ");
 
-	inet_ntop(AF_INET, &inet_rx_parms->mc_group, inet_addr_str,
-		INET_ADDRSTRLEN);
-	inet_addr_str[INET_ADDRSTRLEN - 1] = '\0';
-	log_msg(LOG_SEV_INFO, "%s%%", inet_addr_str);
+	aip_htop_inet(&inet_rx_parms->mc_group, &inet_rx_parms->in_intf_addr,
+		&inet_rx_parms->port, aip_str, AIP_STR_INET_MAX_LEN + 1);
 
-	inet_ntop(AF_INET, &inet_rx_parms->in_intf_addr, inet_addr_str,
-		 INET_ADDRSTRLEN);
-	inet_addr_str[INET_ADDRSTRLEN - 1] = '\0';
-	log_msg(LOG_SEV_INFO, "%s:", inet_addr_str);
-
-	log_msg(LOG_SEV_INFO, "%d\n", inet_rx_parms->port);
+	log_msg(LOG_SEV_INFO, "%s\n", aip_str);
 
 	log_debug_med("%s() exit\n", __func__);
 
