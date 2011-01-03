@@ -41,9 +41,14 @@ int aip_ptoh_inet(const char *aip_str,
 
 void aip_htop_inet(const struct in_addr *addr,
 		   const struct in_addr *if_addr,
-		   const unsigned int *port,
+		   const unsigned int port,
 		   char *aip_str,
 		   const unsigned int aip_str_size);
+
+void ap_htop_inet(const struct in_addr *addr,
+		  const unsigned int port,
+		  char *ap_str,
+		  const unsigned int ap_str_size);
 
 int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		     struct sockaddr_in **ap_sa_list,

@@ -105,7 +105,7 @@ int aip_ptoh_inet(const char *aip_str,
 
 void aip_htop_inet(const struct in_addr *addr,
 		   const struct in_addr *if_addr,
-		   const unsigned int *port,
+		   const unsigned int port,
 		   char *aip_str,
 		   const unsigned int aip_str_size)
 {
@@ -148,10 +148,48 @@ void aip_htop_inet(const struct in_addr *addr,
 	s++;
 	aip_tmp_str_bytes_left--;
 
-	snprintf(s, aip_tmp_str_bytes_left, "%d", *port);
+	snprintf(s, aip_tmp_str_bytes_left, "%d", port);
 	
 	strncpy(aip_str, aip_tmp_str, aip_str_size);
 	aip_str[aip_str_size - 1] = '\0';	
+
+}
+
+void ap_htop_inet(const struct in_addr *addr,
+		  const unsigned int port,
+		  char *ap_str,
+		  const unsigned int ap_str_size)
+{
+	const unsigned int ap_tmp_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
+	char ap_tmp_str[INET_ADDRSTRLEN + 1 + 5 + 1] = { 0 };
+	unsigned int ap_tmp_str_bytes_left = ap_tmp_str_size;
+	char *s;
+
+
+	if (ap_str_size < ap_tmp_str_size) {
+		ap_str[0] = '\0';
+		return;
+	}
+
+	s = ap_tmp_str;
+
+	if (inet_ntop(AF_INET, addr, s, ap_tmp_str_bytes_left) == NULL) {
+		ap_str[0] = '\0';
+		return;
+	}
+
+	ap_tmp_str_bytes_left -= strlen(s) + 1;
+	
+	s = strchr(s, '\0');
+
+	*s = ':';
+	s++;
+	ap_tmp_str_bytes_left--;
+
+	snprintf(s, ap_tmp_str_bytes_left, "%d", port);
+	
+	strncpy(ap_str, ap_tmp_str, ap_str_size);
+	ap_str[ap_str_size - 1] = '\0';	
 
 }
 

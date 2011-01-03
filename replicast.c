@@ -193,6 +193,7 @@ void show_prog_banner(void);
 
 void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms);
 
+void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms);
 
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
@@ -1174,14 +1175,15 @@ void show_prog_banner(void)
 void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
 {
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
+	const unsigned int aip_str_size = AIP_STR_INET_MAX_LEN + 1;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_msg(LOG_SEV_INFO, "inet rx socket: ");
+	log_msg(LOG_SEV_INFO, "inet rx src: ");
 
 	aip_htop_inet(&inet_rx_parms->mc_group, &inet_rx_parms->in_intf_addr,
-		&inet_rx_parms->port, aip_str, AIP_STR_INET_MAX_LEN + 1);
+		inet_rx_parms->port, aip_str, aip_str_size);
 
 	log_msg(LOG_SEV_INFO, "%s\n", aip_str);
 
@@ -1189,6 +1191,35 @@ void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
 
 }
 
+
+void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms)
+{
+	char ap_str[INET_ADDRSTRLEN + 1 + 5 + 1];
+	const unsigned int ap_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
+	unsigned int mc_dest_num = 0;
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "inet tx dsts: ");
+
+	for (mc_dest_num = 0; mc_dest_num < (inet_tx_parms->mc_dests_num - 1);
+								mc_dest_num++) {
+
+		ap_htop_inet(&inet_tx_parms->mc_dests[mc_dest_num].sin_addr,
+			ntohs(inet_tx_parms->mc_dests[mc_dest_num].sin_port),
+			ap_str, ap_str_size);
+		log_msg(LOG_SEV_INFO, "%s,", ap_str);
+	}
+
+	ap_htop_inet(&inet_tx_parms->mc_dests[mc_dest_num].sin_addr,
+		ntohs(inet_tx_parms->mc_dests[mc_dest_num].sin_port),
+		ap_str, ap_str_size);
+	log_msg(LOG_SEV_INFO, "%s\n", ap_str);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
 
 
 void log_opt_error(enum OPT_ERR option_err,
@@ -1315,6 +1346,8 @@ void inet_to_inet_mcast(unsigned int become_daemon,
 	show_prog_banner();
 
 	show_inet_rx_sock_parms(&rx_sock_parms);
+
+	show_inet_tx_sock_parms(&tx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1450,6 +1483,8 @@ void inet_to_inet_inet6_mcast(unsigned int become_daemon,
 	show_prog_banner();
 
 	show_inet_rx_sock_parms(&rx_sock_parms);
+
+	show_inet_tx_sock_parms(&tx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
