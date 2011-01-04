@@ -171,11 +171,10 @@ struct program_parameters {
 
 
 
-enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
-				   struct program_options *prog_opts,
-				   struct program_parameters *prog_parms,
-				   char err_str[],
-				   const unsigned int err_str_size);
+void get_prog_parms(int argc, char *argv[],
+		    struct program_parameters *prog_parms,
+		    char err_str[],
+		    const unsigned int err_str_size);
 
 void init_prog_opts(struct program_options *prog_opts);
 
@@ -347,9 +346,7 @@ struct packet_counters pkt_counters;
 
 int main(int argc, char *argv[])
 {
-	struct program_options prog_opts;
 	char *err_str = NULL;
-	enum REPLICAST_MODE rc_mode;
 
 
 	log_set_detail_level(LOG_SEV_DEBUG_LOW);
@@ -362,10 +359,9 @@ int main(int argc, char *argv[])
 
 	install_exit_signal_handlers();
 
-	rc_mode = get_prog_parms(argc, argv, &prog_opts, &prog_parms,
-								err_str, 0);
+	get_prog_parms(argc, argv, &prog_parms, err_str, 0);
 
-	switch (rc_mode) {
+	switch (prog_parms.rc_mode) {
 	case RCMODE_INET_TO_INET:
 		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET\n", __func__);
 		install_usr_signal_handlers();
@@ -459,120 +455,115 @@ int main(int argc, char *argv[])
 }
 
 
-enum REPLICAST_MODE get_prog_parms(int argc, char *argv[],
-				   struct program_options *prog_opts,
-				   struct program_parameters *prog_parms,
-				   char err_str[],
-				   const unsigned int err_str_size)
+void get_prog_parms(int argc, char *argv[],
+	       struct program_parameters *prog_parms,
+	       char err_str[],
+	       const unsigned int err_str_size)
 {
+	struct program_options prog_opts;
 	enum VALIDATE_PROG_OPTS vpo;
-	enum REPLICAST_MODE rc_mode = RCMODE_ERROR;
 	int vpo_values_ret = 0;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	init_prog_opts(prog_opts);
+	init_prog_opts(&prog_opts);
 
-	get_prog_opts_cmdline(argc, argv, prog_opts);
+	get_prog_opts_cmdline(argc, argv, &prog_opts);
 
-	vpo = validate_prog_opts(prog_opts);
+	vpo = validate_prog_opts(&prog_opts);
 
 	switch (vpo) {
 	case VPO_HELP:
-		rc_mode = RCMODE_HELP;
+		prog_parms->rc_mode = RCMODE_HELP;
 		break;
 	case VPO_ERR_UNKNOWN_OPT:
-		rc_mode = RCMODE_ERROR;
+		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_UNKNOWN_OPT, NULL);
 		break;
 	case VPO_ERR_NO_SRC_GRP:
-		rc_mode = RCMODE_ERROR;
+		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_NO_SRC_GRP, NULL);
 		break;
 	case VPO_ERR_MULTI_SRC_GRPS:
-		rc_mode = RCMODE_ERROR;
+		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_MULTI_SRC_GRPS, NULL);
 		break;
 	case VPO_ERR_NO_DST_GRPS:
-		rc_mode = RCMODE_ERROR;
+		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_NO_DST_GRPS, NULL);
 		break;
 	case VPO_MODE_INETINETINET6:
-		rc_mode = RCMODE_INET_TO_INET_INET6;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET_TO_INET_INET6;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INETINET:
-		rc_mode = RCMODE_INET_TO_INET;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET_TO_INET;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INETINET6:
-		rc_mode = RCMODE_INET_TO_INET6;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET_TO_INET6;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INET6INETINET6:
-		rc_mode = RCMODE_INET6_TO_INET_INET6;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET6_TO_INET_INET6;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INET6INET:
-		rc_mode = RCMODE_INET6_TO_INET;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET6_TO_INET;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_MODE_INET6INET6:
-		rc_mode = RCMODE_INET6_TO_INET6;
-		vpo_values_ret = validate_prog_opts_values(prog_opts,
+		prog_parms->rc_mode = RCMODE_INET6_TO_INET6;
+		vpo_values_ret = validate_prog_opts_values(&prog_opts,
 							   prog_parms,
 							   err_str,
 							   err_str_size);		
 		if (vpo_values_ret == -1) {
-			rc_mode = RCMODE_ERROR;
+			prog_parms->rc_mode = RCMODE_ERROR;
 		}
 		break;
 	case VPO_ERR_UNKNOWN:
-		rc_mode = RCMODE_ERROR;
+		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_UNKNOWN_ERROR, NULL);
 		break;
 	default:
-		rc_mode = RCMODE_HELP;
+		prog_parms->rc_mode = RCMODE_HELP;
 		break;
 	
 	}
 
-	prog_parms->rc_mode = rc_mode;
-
 	log_debug_med("%s() exit\n", __func__);
-
-	return rc_mode;
 
 }
 
