@@ -201,6 +201,8 @@ void show_prog_banner(void);
 
 void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms);
 
+void show_inet6_rx_sock_parms(struct inet6_rx_mc_sock_params *inet6_rx_parms);
+
 void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms);
 
 void log_opt_error(enum OPT_ERR option_err,
@@ -1188,6 +1190,26 @@ void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
 }
 
 
+void show_inet6_rx_sock_parms(struct inet6_rx_mc_sock_params *inet6_rx_parms)
+{
+	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
+	const unsigned int aip_str_size = AIP_STR_INET6_MAX_LEN + 1;
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "inet6 rx src: ");
+
+	aip_htop_inet6(&inet6_rx_parms->mc_group, inet6_rx_parms->in_intf_idx,
+		inet6_rx_parms->port, aip_str, aip_str_size);
+
+	log_msg(LOG_SEV_INFO, "%s\n", aip_str);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
 void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms)
 {
 	char ap_str[INET_ADDRSTRLEN + 1 + 5 + 1];
@@ -1501,6 +1523,8 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 
 	show_prog_banner();
 
+	show_inet6_rx_sock_parms(&rx_sock_parms);
+
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1546,6 +1570,8 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 	}
 
 	show_prog_banner();
+
+	show_inet6_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1598,6 +1624,8 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 	}
 
 	show_prog_banner();
+
+	show_inet6_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
