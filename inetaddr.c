@@ -115,8 +115,10 @@ void aip_htop_inet(const struct in_addr *addr,
 	char *s;
 
 
-	if (aip_str_size < aip_tmp_str_size) {
-		aip_str[0] = '\0';
+	if (aip_str_size < aip_tmp_str_size ) {
+		if (aip_str_size) {
+			aip_str[0] = '\0';
+		}
 		return;
 	}
 
@@ -171,7 +173,9 @@ void ap_htop_inet(const struct in_addr *addr,
 
 
 	if (ap_str_size < ap_str_min_size) {
-		ap_str[0] = '\0';
+		if (ap_str_size) {
+			ap_str[0] = '\0';
+		}
 		return;
 	}
 
@@ -366,7 +370,9 @@ void aip_htop_inet6(const struct in6_addr *addr,
 
 
 	if (aip_str_size < aip_tmp_str_size) {
-		aip_str[0] = '\0';
+		if (aip_str_size) {
+			aip_str[0] = '\0';
+		}
 		return;
 	}
 
@@ -425,7 +431,9 @@ void ap_htop_inet6(const struct in6_addr *addr,
 
 
 	if (ap_str_size < ap_str_min_size) {
-		ap_str[0] = '\0';
+		if (ap_str_size) {
+			ap_str[0] = '\0';
+		}
 		return;
 	}
 
