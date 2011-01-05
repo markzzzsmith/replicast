@@ -48,7 +48,8 @@ enum VALIDATE_PROG_OPTS_VALS {
 	VPOV_ERR_DST_PORT,
 	VPOV_ERR_INET_DST_GRP,
 	VPOV_ERR_INET_TX_TTL_RANGE,
-	VPOV_ERR_OUT_INTF,
+	VPOV_ERR_INET_OUT_INTF,
+	VPOV_ERR_INET6_OUT_INTF,
 	VPOV_ERR_INET6_DST_GRP,
 	VPOV_ERR_INET6_TX_HOPS_RANGE,
 	VPOV_ERR_UNKNOWN_ERR,
@@ -66,7 +67,8 @@ enum OPT_ERR {
 	OE_DST_PORT,
 	OE_INET_DST_GRPS,
 	OE_INET_TX_TTL_RANGE,
-	OE_OUT_INTF,
+	OE_INET_OUT_INTF,
+	OE_INET6_OUT_INTF,
 	OE_INET6_DST_GRPS,
 	OE_INET6_TX_HOPS_RANGE,
 	OE_UNKNOWN_ERROR,
@@ -1059,10 +1061,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				&prog_parms->inet_tx_sock_parms.out_intf_addr);	
 			if (ret == -1) {
 				log_debug_low("%s() return "
-					"VPOV_ERR_OUT_INTF\n",
+					"VPOV_ERR_INET_OUT_INTF\n",
 						__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_OUT_INTF;
+				return VPOV_ERR_INET_OUT_INTF;
 			}
 		}
 	}
@@ -1112,10 +1114,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 						inet6_tx_mc_sock_out_intf_str);
 			if (out_intf_idx == 0) {
 				log_debug_low("%s() return "
-					"VPOV_ERR_OUT_INTF\n",
+					"VPOV_ERR_INET6_OUT_INTF\n",
 						__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_OUT_INTF;
+				return VPOV_ERR_INET6_OUT_INTF;
 			}
 			prog_parms->inet6_tx_sock_parms.out_intf_idx =
 								 out_intf_idx;
@@ -1160,8 +1162,11 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 	case VPOV_ERR_INET_TX_TTL_RANGE:
 		log_opt_error(OE_INET_TX_TTL_RANGE, NULL);
 		break;
-	case VPOV_ERR_OUT_INTF:
-		log_opt_error(OE_OUT_INTF, NULL);
+	case VPOV_ERR_INET_OUT_INTF:
+		log_opt_error(OE_INET_OUT_INTF, NULL);
+		break;
+	case VPOV_ERR_INET6_OUT_INTF:
+		log_opt_error(OE_INET6_OUT_INTF, NULL);
 		break;
 	case VPOV_ERR_INET6_DST_GRP:
 		log_opt_error(OE_INET6_DST_GRPS, NULL);
@@ -1412,8 +1417,11 @@ void log_opt_error(enum OPT_ERR option_err,
 	case OE_INET_TX_TTL_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid IPv4 transmit time-to-live.\n");
 		break;
-	case OE_OUT_INTF:
-		log_msg(LOG_SEV_ERR, "Invalid output interface.\n");
+	case OE_INET_OUT_INTF:
+		log_msg(LOG_SEV_ERR, "Invalid IPv4 output interface.\n");
+		break;
+	case OE_INET6_OUT_INTF:
+		log_msg(LOG_SEV_ERR, "Invalid IPv6 output interface.\n");
 		break;
 	case OE_INET6_DST_GRPS:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination group.\n");
