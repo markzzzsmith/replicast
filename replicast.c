@@ -172,6 +172,7 @@ struct program_parameters {
 };
 
 
+void log_prog_help(void);
 
 void get_prog_parms(int argc, char *argv[],
 		    struct program_parameters *prog_parms,
@@ -379,6 +380,11 @@ int main(int argc, char *argv[])
 	get_prog_parms(argc, argv, &prog_parms, err_str, 0);
 
 	switch (prog_parms.rc_mode) {
+	case RCMODE_HELP:
+		log_debug_med("%s() rc_mode = RCMODE_HELP\n", __func__);
+		log_prog_banner();
+		log_prog_help();
+		break;
 	case RCMODE_INET_TO_INET:
 		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET\n", __func__);
 		install_usr_signal_handlers();
@@ -482,6 +488,64 @@ int main(int argc, char *argv[])
 	}
 
 	return EXIT_FAILURE;
+
+}
+
+
+void log_prog_help(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to ");
+	log_msg(LOG_SEV_INFO, "IPv4 and/or IPv6 destinations.\n");
+
+	log_msg(LOG_SEV_INFO, "\ncommand line options:\n");
+
+	log_msg(LOG_SEV_INFO, "-help\n");
+	log_msg(LOG_SEV_INFO, "-nodaemon\n");
+
+	log_msg(LOG_SEV_INFO, "-4src <addr>[%<ifname>|<ifaddr>]:<port>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%eth0:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%192.168.1.1:1234\n");
+
+	log_msg(LOG_SEV_INFO, "-6src <[addr]>[%<ifname>]:<port>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35%%eth0]:1234\n");
+
+	log_msg(LOG_SEV_INFO, "-4dsts <addr>:<port>,<addr>:port,...\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4dsts 224.0.0.36:1234,");
+	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,224.0.0.38:9012\n");
+
+	log_msg(LOG_SEV_INFO, "-4ttl <ttl>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4ttl 32\n");
+
+	log_msg(LOG_SEV_INFO, "-4loop\n");
+
+	log_msg(LOG_SEV_INFO, "-4outif <ifname>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4outif eth0\n");
+
+	log_msg(LOG_SEV_INFO, "-6dsts <[addr]>:<port>,<[addr]>:<port>,...\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6dsts [ff05::36]:1234,");
+	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[ff05::39]:9012\n");
+
+	log_msg(LOG_SEV_INFO, "-6hops <hop count>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6hops 16\n");
+
+	log_msg(LOG_SEV_INFO, "-6loop\n");
+
+	log_msg(LOG_SEV_INFO, "-6outif <ifname>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6outif eth0\n");
+
+	log_msg(LOG_SEV_INFO, "\nsignals:\n");
+
+	log_msg(LOG_SEV_INFO, "SIGUSR1 - log current UDP datagram rx and tx ");
+	log_msg(LOG_SEV_INFO, "stats.\n");
+	log_msg(LOG_SEV_INFO, "SIGUSR2 - log program parameters.\n");
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
