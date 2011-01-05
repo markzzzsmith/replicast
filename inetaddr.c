@@ -131,18 +131,21 @@ void aip_htop_inet(const struct in_addr *addr,
 	
 	s = strchr(s, '\0');
 
-	*s = '%';
-	s++;
-	aip_tmp_str_bytes_left--;
+	if (if_addr->s_addr != INADDR_ANY) {
+		*s = '%';
+		s++;
+		aip_tmp_str_bytes_left--;
 
-	if (inet_ntop(AF_INET, if_addr, s, aip_tmp_str_bytes_left) == NULL) {
-		aip_str[0] = '\0';
-		return;
-	}
+		if (inet_ntop(AF_INET, if_addr, s, aip_tmp_str_bytes_left) ==
+									NULL) {
+			aip_str[0] = '\0';
+			return;
+		}
 	
-	aip_tmp_str_bytes_left -= strlen(s) + 1;
+		aip_tmp_str_bytes_left -= strlen(s) + 1;
 
-	s = strchr(s, '\0');
+		s = strchr(s, '\0');
+	}
 	
 	*s = ':';
 	s++;
