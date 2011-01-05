@@ -68,6 +68,11 @@ void aip_htop_inet6(const struct in6_addr *addr,
 		    char *aip_str,
 		    const unsigned int aip_str_size);
 
+void ap_htop_inet6(const struct in6_addr *addr,
+                   const unsigned int port,
+                   char *ap_str,
+                   const unsigned int ap_str_size);
+
 int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 		      struct sockaddr_in6 **ap_sa6_list,
 		      const int max_sa6_list_len,

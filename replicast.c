@@ -197,13 +197,21 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 			      char *err_str_parm,
 			      const unsigned int err_str_size);
 
-void show_prog_banner(void);
+void log_prog_banner(void);
 
-void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms);
+void log_prog_parms(const struct program_parameters *prog_parms);
 
-void show_inet6_rx_sock_parms(struct inet6_rx_mc_sock_params *inet6_rx_parms);
+void log_inet_rx_sock_parms(const struct inet_rx_mc_sock_params
+								*inet_rx_parms);
 
-void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms);
+void log_inet6_rx_sock_parms(const struct inet6_rx_mc_sock_params
+							*inet6_rx_parms);
+
+void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params
+							*inet_tx_parms);
+
+void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
+							*inet6_tx_parms);
 
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
@@ -281,11 +289,15 @@ void install_sigint_handler(struct sigaction *sigint_action);
 
 void install_sigusr1_handler(struct sigaction *sigusr1_action);
 
+void install_sigusr2_handler(struct sigaction *sigusr2_action);
+
 void sigterm_handler(int signum);
 
 void sigint_handler(int signum);
 
 void sigusr1_handler(int signum);
+
+void sigusr2_handler(int signum);
 
 int open_inet_rx_mc_sock(const struct in_addr mc_group,
 			 const unsigned int port,
@@ -342,6 +354,7 @@ char syslog_ident[100];
 struct sigaction sigterm_action;
 struct sigaction sigint_action;
 struct sigaction sigusr1_action;
+struct sigaction sigusr2_action;
 
 struct packet_counters pkt_counters;
 
@@ -370,6 +383,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet_to_inet_mcast(&sock_fds.inet_in_sock_fd,
 				   prog_parms.inet_rx_sock_parms,
 				   &sock_fds.inet_out_sock_fd,
@@ -383,6 +398,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet_to_inet6_mcast(&sock_fds.inet_in_sock_fd,
 				    prog_parms.inet_rx_sock_parms,
 				    &sock_fds.inet6_out_sock_fd,
@@ -396,6 +413,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet_to_inet_inet6_mcast(&sock_fds.inet_in_sock_fd,
 					 prog_parms.inet_rx_sock_parms,
 					 &sock_fds.inet_out_sock_fd,
@@ -411,6 +430,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet6_to_inet6_mcast(&sock_fds.inet6_in_sock_fd,
 				     prog_parms.inet6_rx_sock_parms,
 				     &sock_fds.inet6_out_sock_fd,
@@ -424,6 +445,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet6_to_inet_mcast(&sock_fds.inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &sock_fds.inet_out_sock_fd,
@@ -437,6 +460,8 @@ int main(int argc, char *argv[])
 		if (prog_parms.become_daemon) {
 			daemonise();
 		}
+		log_prog_banner();
+		log_prog_parms(&prog_parms);
 		inet6_to_inet_inet6_mcast(&sock_fds.inet6_in_sock_fd,
 				    prog_parms.inet6_rx_sock_parms,
 				    &sock_fds.inet_out_sock_fd,
@@ -449,6 +474,8 @@ int main(int argc, char *argv[])
 		log_debug_med("%s() rc_mode = RCMODE_ERROR\n",
 								__func__);
 		exit(EXIT_FAILURE);
+		break;
+	default:
 		break;
 	}
 
@@ -652,30 +679,30 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
 		CMDLINE_OPT_NODAEMON,
-		CMDLINE_OPT_4SRCGRP,
+		CMDLINE_OPT_4SRC,
 		CMDLINE_OPT_4TTL,
 		CMDLINE_OPT_4LOOP,
 		CMDLINE_OPT_4OUTIF,
-		CMDLINE_OPT_4DSTGRPS,
-		CMDLINE_OPT_6SRCGRP,
+		CMDLINE_OPT_4DSTS,
+		CMDLINE_OPT_6SRC,
 		CMDLINE_OPT_6HOPS,
 		CMDLINE_OPT_6LOOP,
 		CMDLINE_OPT_6OUTIF,
-		CMDLINE_OPT_6DSTGRPS,
+		CMDLINE_OPT_6DSTS,
 	};
 	struct option cmdline_opts[] = {
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
 		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
-		{"4srcgrp", required_argument, NULL, CMDLINE_OPT_4SRCGRP},
+		{"4src", required_argument, NULL, CMDLINE_OPT_4SRC},
 		{"4ttl", required_argument, NULL, CMDLINE_OPT_4TTL},
 		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
 		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
-		{"4dstgrps", required_argument, NULL, CMDLINE_OPT_4DSTGRPS},
-		{"6srcgrp", required_argument, NULL, CMDLINE_OPT_6SRCGRP},
+		{"4dsts", required_argument, NULL, CMDLINE_OPT_4DSTS},
+		{"6src", required_argument, NULL, CMDLINE_OPT_6SRC},
 		{"6hops", required_argument, NULL, CMDLINE_OPT_6HOPS},
 		{"6loop", no_argument, NULL, CMDLINE_OPT_6LOOP},
 		{"6outif", required_argument, NULL, CMDLINE_OPT_6OUTIF},
-		{"6dstgrps", required_argument, NULL, CMDLINE_OPT_6DSTGRPS},
+		{"6dsts", required_argument, NULL, CMDLINE_OPT_6DSTS},
 		{0, 0, 0, 0}
 	};
 	enum CMDLINE_OPTS ret;
@@ -700,9 +727,9 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 				"CMDLINE_OPT_NODAEMON\n", __func__);
 			prog_opts->no_daemon_set = 1;
 			break;
-		case CMDLINE_OPT_4SRCGRP:
+		case CMDLINE_OPT_4SRC:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4SRCGRP\n", __func__);
+				"CMDLINE_OPT_4SRC\n", __func__);
 			prog_opts->inet_rx_sock_mcgroup_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_str = optarg;
 			break;
@@ -723,15 +750,15 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet_tx_sock_out_intf_set = 1;
 			prog_opts->inet_tx_sock_out_intf_str = optarg;
 			break;
-		case CMDLINE_OPT_4DSTGRPS:
+		case CMDLINE_OPT_4DSTS:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4DSTGRPS\n", __func__);
+				"CMDLINE_OPT_4DSTS\n", __func__);
 			prog_opts->inet_tx_sock_mc_dests_set = 1;
 			prog_opts->inet_tx_sock_mc_dests_str = optarg;
 			break;
-		case CMDLINE_OPT_6SRCGRP:
+		case CMDLINE_OPT_6SRC:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6SRCGRP\n", __func__);
+				"CMDLINE_OPT_6SRC\n", __func__);
 			prog_opts->inet6_rx_sock_mcgroup_set = 1;
 			prog_opts->inet6_rx_sock_mcgroup_str = optarg;
 			break;
@@ -752,9 +779,9 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet6_tx_mc_sock_out_intf_set = 1;
 			prog_opts->inet6_tx_mc_sock_out_intf_str = optarg;
 			break;
-		case CMDLINE_OPT_6DSTGRPS:
+		case CMDLINE_OPT_6DSTS:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6DSTGRPS\n", __func__);
+				"CMDLINE_OPT_6DSTS\n", __func__);
 			prog_opts->inet6_tx_mc_sock_mc_dests_set = 1;
 			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
 			break;
@@ -1062,7 +1089,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 
 		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
 			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
-			if ((tx_hops < 0) || (tx_ttl)) {
+			if ((tx_hops < 0) || (tx_hops > 255)) {
 				log_debug_low("%s() return "
 					"VPOV_ERR_INET6_TX_HOPS_RANGE\n",
 						__func__);
@@ -1157,7 +1184,7 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 }
 
 
-void show_prog_banner(void)
+void log_prog_banner(void)
 {
 
 
@@ -1170,7 +1197,50 @@ void show_prog_banner(void)
 }
 
 
-void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
+void log_prog_parms(const struct program_parameters *prog_parms)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	switch(prog_parms->rc_mode) {
+	case RCMODE_INET_TO_INET:
+		log_inet_rx_sock_parms(&prog_parms->inet_rx_sock_parms);
+		log_inet_tx_sock_parms(&prog_parms->inet_tx_sock_parms);
+		break;
+	case RCMODE_INET_TO_INET6:
+		log_inet_rx_sock_parms(&prog_parms->inet_rx_sock_parms);
+		log_inet6_tx_sock_parms(&prog_parms->inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET_TO_INET_INET6:
+		log_inet_rx_sock_parms(&prog_parms->inet_rx_sock_parms);
+		log_inet_tx_sock_parms(&prog_parms->inet_tx_sock_parms);
+		log_inet6_tx_sock_parms(&prog_parms->inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET6:
+		log_inet6_rx_sock_parms(&prog_parms->inet6_rx_sock_parms);
+		log_inet6_tx_sock_parms(&prog_parms->inet6_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET:
+		log_inet6_rx_sock_parms(&prog_parms->inet6_rx_sock_parms);
+		log_inet_tx_sock_parms(&prog_parms->inet_tx_sock_parms);
+		break;
+	case RCMODE_INET6_TO_INET_INET6:
+		log_inet6_rx_sock_parms(&prog_parms->inet6_rx_sock_parms);
+		log_inet_tx_sock_parms(&prog_parms->inet_tx_sock_parms);
+		log_inet6_tx_sock_parms(&prog_parms->inet6_tx_sock_parms);
+		break;
+	default:
+		break;
+	}
+
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void log_inet_rx_sock_parms(const struct inet_rx_mc_sock_params *inet_rx_parms)
 {
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
 	const unsigned int aip_str_size = AIP_STR_INET_MAX_LEN + 1;
@@ -1190,7 +1260,8 @@ void show_inet_rx_sock_parms(struct inet_rx_mc_sock_params *inet_rx_parms)
 }
 
 
-void show_inet6_rx_sock_parms(struct inet6_rx_mc_sock_params *inet6_rx_parms)
+void log_inet6_rx_sock_parms(const struct inet6_rx_mc_sock_params
+							*inet6_rx_parms)
 {
 	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
 	const unsigned int aip_str_size = AIP_STR_INET6_MAX_LEN + 1;
@@ -1210,11 +1281,12 @@ void show_inet6_rx_sock_parms(struct inet6_rx_mc_sock_params *inet6_rx_parms)
 }
 
 
-void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms)
+void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 {
-	char ap_str[INET_ADDRSTRLEN + 1 + 5 + 1];
 	const unsigned int ap_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
+	char ap_str[ap_str_size];
 	unsigned int mc_dest_num = 0;
+	char out_intf_addr_str[INET_ADDRSTRLEN];
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -1235,6 +1307,65 @@ void show_inet_tx_sock_parms(struct inet_tx_mc_sock_params *inet_tx_parms)
 		ap_str, ap_str_size);
 	log_msg(LOG_SEV_INFO, "%s\n", ap_str);
 
+	log_msg(LOG_SEV_INFO, "inet tx opts: ");
+
+	inet_ntop(AF_INET, &inet_tx_parms->out_intf_addr,
+		out_intf_addr_str, INET_ADDRSTRLEN);
+	log_msg(LOG_SEV_INFO, "out intf addr %s", out_intf_addr_str);
+
+	if (inet_tx_parms->mc_loop) {
+		log_msg(LOG_SEV_INFO, ", tx loop");
+	}
+
+	log_msg(LOG_SEV_INFO, ", ttl %d\n", inet_tx_parms->mc_ttl);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
+void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
+								*inet6_tx_parms)
+{
+	const unsigned int ap_str_size = 1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1;
+	char ap_str[ap_str_size];
+	unsigned int mc_dest_num = 0;
+	char out_intf_name[IFNAMSIZ];
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "inet6 tx dsts: ");
+
+	for (mc_dest_num = 0; mc_dest_num < (inet6_tx_parms->mc_dests_num - 1);
+								mc_dest_num++) {
+
+		ap_htop_inet6(&inet6_tx_parms->mc_dests[mc_dest_num].sin6_addr,
+			ntohs(inet6_tx_parms->mc_dests[mc_dest_num].sin6_port),
+			ap_str, ap_str_size);
+		log_msg(LOG_SEV_INFO, "%s,", ap_str);
+	}
+
+	ap_htop_inet6(&inet6_tx_parms->mc_dests[mc_dest_num].sin6_addr,
+		ntohs(inet6_tx_parms->mc_dests[mc_dest_num].sin6_port),
+		ap_str, ap_str_size);
+	log_msg(LOG_SEV_INFO, "%s\n", ap_str);
+
+	log_msg(LOG_SEV_INFO, "inet6 tx opts: ");
+
+	if (inet6_tx_parms->out_intf_idx == 0) {
+		log_msg(LOG_SEV_INFO, "out intf any");
+	} else {
+		if_indextoname(inet6_tx_parms->out_intf_idx, out_intf_name);
+		log_msg(LOG_SEV_INFO, "out intf %s", out_intf_name);
+	}
+
+	if (inet6_tx_parms->mc_loop) {
+		log_msg(LOG_SEV_INFO, ", tx loop");
+	}
+
+	log_msg(LOG_SEV_INFO, ", hops %d\n", inet6_tx_parms->mc_hops);
+
 	log_debug_med("%s() exit\n", __func__);
 
 }
@@ -1247,7 +1378,7 @@ void log_opt_error(enum OPT_ERR option_err,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	show_prog_banner();
+	log_prog_banner();
 
 	switch (option_err) {
 	case OE_UNKNOWN_OPT:
@@ -1359,12 +1490,6 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	show_prog_banner();
-
-	show_inet_rx_sock_parms(&rx_sock_parms);
-
-	show_inet_tx_sock_parms(&tx_sock_parms);
-
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1408,10 +1533,6 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
-
-	show_prog_banner();
-
-	show_inet_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1466,12 +1587,6 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	show_prog_banner();
-
-	show_inet_rx_sock_parms(&rx_sock_parms);
-
-	show_inet_tx_sock_parms(&inet_tx_sock_parms);
-
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1521,10 +1636,6 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	show_prog_banner();
-
-	show_inet6_rx_sock_parms(&rx_sock_parms);
-
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
 		log_debug_low("%s(): recv() == %d\n", __func__, rx_pkt_len);
@@ -1568,10 +1679,6 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
-
-	show_prog_banner();
-
-	show_inet6_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1622,10 +1729,6 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
-
-	show_prog_banner();
-
-	show_inet6_rx_sock_parms(&rx_sock_parms);
 
 	for ( ;; ) {
 		rx_pkt_len = recv(*inet6_in_sock_fd, pkt_buf, PKT_BUF_SIZE, 0);
@@ -1809,6 +1912,8 @@ void install_usr_signal_handlers(void)
 
 	install_sigusr1_handler(&sigusr1_action);
 
+	install_sigusr2_handler(&sigusr2_action);
+
 	log_debug_med("%s() exit\n", __func__);
 
 }
@@ -1865,6 +1970,23 @@ void install_sigusr1_handler(struct sigaction *sigusr1_action)
 }
 
 
+void install_sigusr2_handler(struct sigaction *sigusr2_action)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	sigusr2_action->sa_handler = sigusr2_handler;
+        sigemptyset(&(sigusr2_action->sa_mask));
+        sigusr2_action->sa_flags = 0;
+
+        sigaction(SIGUSR2, sigusr2_action, NULL);
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
 void sigterm_handler(int signum)
 {
 
@@ -1899,6 +2021,22 @@ void sigusr1_handler(int signum)
 	log_debug_med("%s() entry\n", __func__);
 
 	log_packet_counters(&pkt_counters);
+
+	log_debug_med("%s() exit\n", __func__);
+
+
+}
+
+
+void sigusr2_handler(int signum)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_prog_banner();
+
+	log_prog_parms(&prog_parms);
 
 	log_debug_med("%s() exit\n", __func__);
 
