@@ -1314,9 +1314,13 @@ void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 
 	log_msg(LOG_SEV_INFO, "inet tx opts: ");
 
-	inet_ntop(AF_INET, &inet_tx_parms->out_intf_addr,
-		out_intf_addr_str, INET_ADDRSTRLEN);
-	log_msg(LOG_SEV_INFO, "out intf addr %s", out_intf_addr_str);
+	if (inet_tx_parms->out_intf_addr.s_addr == INADDR_ANY) {
+		log_msg(LOG_SEV_INFO, "out intf any");
+	} else {
+		inet_ntop(AF_INET, &inet_tx_parms->out_intf_addr,
+			out_intf_addr_str, INET_ADDRSTRLEN);
+		log_msg(LOG_SEV_INFO, "out intf addr %s", out_intf_addr_str);
+	}
 
 	if (inet_tx_parms->mc_loop) {
 		log_msg(LOG_SEV_INFO, ", tx loop");
