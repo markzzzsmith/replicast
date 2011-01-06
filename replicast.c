@@ -2502,11 +2502,13 @@ void log_packet_counters(const struct packet_counters *pkt_counters)
 
 	log_msg(LOG_SEV_INFO, "inet pkts in %lld, ",
 						pkt_counters->inet_in_pkts);
-	log_msg(LOG_SEV_INFO, "inet pkts out %lld, ",
-						pkt_counters->inet_out_pkts);
 
 	log_msg(LOG_SEV_INFO, "inet6 pkts in %lld, ",
 						pkt_counters->inet6_in_pkts);
+
+	log_msg(LOG_SEV_INFO, "inet pkts out %lld, ",
+						pkt_counters->inet_out_pkts);
+
 	log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
 						pkt_counters->inet6_out_pkts);
 

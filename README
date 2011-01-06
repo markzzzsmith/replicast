@@ -35,12 +35,6 @@ destination has a larger scope than link local
 
 3.1 IPv6 Multicast in VLC
 
-IPv6 multicast addresses need to have interface name specified, as well as
-being enclosed in square brackets e.g.
-
-[ff02::15%eth0]
-
-
 For streaming over multicast IPv6 -
 
 For non-link local multicast destinations -
@@ -72,7 +66,7 @@ Can add destination UDP port e.g.
 
 vlc -vvv v\ for\ vendetta.mp4 --ipv6 --sout udp://\[ff02::15%dummy0\]:1234
 
-URL format in GUI for watching streams is 'udp://@[IPv6 MC address]:<port>' - note @ symbol in GUI verses not used on command line. Specyfing interface is not supported via "%<interface>", so an IPv6 multicast route will need to exist in the local table so that VLC listens on the correct input interface
+URL format in GUI for watching streams is 'udp://@[IPv6 MC address]:<port>' - note @ symbol in GUI verses not used on command line. Specyfing interface is not supported via "%<interface>", so an IPv6 multicast route will need to exist in the local table so that VLC listens on the correct input interface. Annoyingly if you leave out the @ symbol, VLC doesn't error, and appears to be working.
 
 Address format when sending streams is e.g. "[ff05::30]", with corresponding route. For link local multicast destinations, specify outgoing interface e.g. [ff02::30%eth0]
 
