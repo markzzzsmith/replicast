@@ -1550,6 +1550,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_pkts;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -1573,10 +1574,9 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests);
-			pkt_counters->inet_out_pkts +=
-						tx_sock_parms.mc_dests_num;
+			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
 
@@ -1593,6 +1593,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_pkts;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -1616,10 +1617,9 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests);
-			pkt_counters->inet6_out_pkts +=
-						tx_sock_parms.mc_dests_num;
+			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
 
@@ -1639,6 +1639,8 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_inet_pkts;
+	int txed_inet6_pkts;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -1668,14 +1670,12 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms.mc_dests);
-			pkt_counters->inet_out_pkts +=
-					inet_tx_sock_parms.mc_dests_num;
-			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			pkt_counters->inet_out_pkts += txed_inet_pkts;
+			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms.mc_dests);
-			pkt_counters->inet6_out_pkts +=
-					inet6_tx_sock_parms.mc_dests_num;
+			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
 	}
 
@@ -1692,6 +1692,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_pkts;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -1715,10 +1716,9 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests);
-			pkt_counters->inet6_out_pkts +=
-						tx_sock_parms.mc_dests_num;
+			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
 
@@ -1735,6 +1735,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_pkts;
 
 
 	log_debug("%s() entry\n", __func__);
@@ -1758,10 +1759,9 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms.mc_dests);
-			pkt_counters->inet_out_pkts +=
-						tx_sock_parms.mc_dests_num;
+			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
 
@@ -1778,6 +1778,8 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
 	ssize_t rx_pkt_len;
+	int txed_inet_pkts;
+	int txed_inet6_pkts;
 
 
 	log_debug("%s() entry\n", __func__);
@@ -1807,14 +1809,12 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms.mc_dests);
-			pkt_counters->inet_out_pkts +=
-						inet_tx_sock_parms.mc_dests_num;
-			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			pkt_counters->inet_out_pkts += txed_inet_pkts;
+			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms.mc_dests);
-			pkt_counters->inet6_out_pkts +=
-					inet6_tx_sock_parms.mc_dests_num;
+			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
 	}
 
