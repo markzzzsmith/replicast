@@ -338,7 +338,8 @@ int inet6_tx_mcast(const int sock_fd,
 
 void close_sockets(const struct socket_fds *sock_fds);
 
-void log_packet_counters(const struct packet_counters *pkt_counters);
+void log_packet_counters(const enum REPLICAST_MODE rc_mode,
+			 const struct packet_counters *pkt_counters);
 
 void exit_program(void);
 
@@ -2104,7 +2105,7 @@ void sigusr1_handler(int signum)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_packet_counters(&pkt_counters);
+	log_packet_counters(prog_parms.rc_mode, &pkt_counters);
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -2496,21 +2497,61 @@ void close_sockets(const struct socket_fds *sock_fds)
 }
 
 
-void log_packet_counters(const struct packet_counters *pkt_counters)
+void log_packet_counters(const enum REPLICAST_MODE rc_mode,
+			 const struct packet_counters *pkt_counters)
 {
 
 
-	log_msg(LOG_SEV_INFO, "inet pkts in %lld, ",
+	log_debug_med("%s() entry\n", __func__);
+
+	switch (rc_mode) {
+	case RCMODE_INET_TO_INET:
+		log_msg(LOG_SEV_INFO, "inet pkts in %lld, ",
 						pkt_counters->inet_in_pkts);
-
-	log_msg(LOG_SEV_INFO, "inet6 pkts in %lld, ",
-						pkt_counters->inet6_in_pkts);
-
-	log_msg(LOG_SEV_INFO, "inet pkts out %lld, ",
+		log_msg(LOG_SEV_INFO, "inet pkts out %lld\n",
 						pkt_counters->inet_out_pkts);
-
-	log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
+		break;
+	case RCMODE_INET_TO_INET6:
+		log_msg(LOG_SEV_INFO, "inet pkts in %lld, ",
+						pkt_counters->inet_in_pkts);
+		log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
 						pkt_counters->inet6_out_pkts);
+		break;
+	case RCMODE_INET_TO_INET_INET6:
+		log_msg(LOG_SEV_INFO, "inet pkts in %lld, ",
+						pkt_counters->inet_in_pkts);
+		log_msg(LOG_SEV_INFO, "inet pkts out %lld, ",
+						pkt_counters->inet_out_pkts);
+		log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
+						pkt_counters->inet6_out_pkts);
+		break;
+	case RCMODE_INET6_TO_INET6:
+		log_msg(LOG_SEV_INFO, "inet6 pkts in %lld, ",
+						pkt_counters->inet6_in_pkts);
+		log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
+						pkt_counters->inet6_out_pkts);
+		break;
+	case RCMODE_INET6_TO_INET:
+		log_msg(LOG_SEV_INFO, "inet6 pkts in %lld, ",
+						pkt_counters->inet6_in_pkts);
+		log_msg(LOG_SEV_INFO, "inet pkts out %lld\n",
+						pkt_counters->inet_out_pkts);
+		break;
+	case RCMODE_INET6_TO_INET_INET6:
+		log_msg(LOG_SEV_INFO, "inet6 pkts in %lld, ",
+						pkt_counters->inet6_in_pkts);
+		log_msg(LOG_SEV_INFO, "inet pkts out %lld, ",
+						pkt_counters->inet_out_pkts);
+		log_msg(LOG_SEV_INFO, "inet6 pkts out %lld\n",
+						pkt_counters->inet6_out_pkts);
+		break;
+	default:
+		break;
+
+
+	}
+
+	log_debug_med("%s() exit\n", __func__);
 
 }
 
@@ -2523,7 +2564,7 @@ void exit_program(void)
 
 	close_sockets(&sock_fds);
 
-	log_packet_counters(&pkt_counters);
+	log_packet_counters(prog_parms.rc_mode, &pkt_counters);
 
 	cleanup_prog_parms(&prog_parms);
 
