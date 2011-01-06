@@ -1083,6 +1083,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_opts->inet_tx_sock_mc_dests_str,
 				&prog_parms->inet_tx_sock_parms.mc_dests,
 				0,
+				1,
 				err_str_parm,
 				err_str_size);
 		if (ret == -1) {
@@ -1139,6 +1140,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_opts->inet6_tx_mc_sock_mc_dests_str,
 				&prog_parms->inet6_tx_sock_parms.mc_dests,
 				0,
+				1,
 				err_str_parm,
 				err_str_size);
 		if (ret == -1) {

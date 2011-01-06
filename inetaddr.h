@@ -53,6 +53,7 @@ void ap_htop_inet(const struct in_addr *addr,
 int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		     struct sockaddr_in **ap_sa_list,
 		     const int max_sa_list_len,
+		     const unsigned int sentinel,
 		     char *ap_err_str,
 		     const unsigned int ap_err_str_size);
 
@@ -76,6 +77,7 @@ void ap_htop_inet6(const struct in6_addr *addr,
 int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 		      struct sockaddr_in6 **ap_sa6_list,
 		      const int max_sa6_list_len,
+		      const unsigned int sentinel,
 		      char *ap_err_str,
 		      const unsigned int ap_err_str_size);
 

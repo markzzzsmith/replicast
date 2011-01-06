@@ -192,6 +192,7 @@ void ap_htop_inet(const struct in_addr *addr,
 int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		     struct sockaddr_in **ap_sa_list,
 		     const int max_sa_list_len,
+		     const unsigned int sentinel,
 		     char *ap_err_str,
 		     const unsigned int ap_err_str_size)
 {
@@ -266,12 +267,16 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 		 sa_list_len < INT_MAX &&
 		((sa_list_len < max_sa_list_len ) || (max_sa_list_len == 0)));
 
-	memset(&ap_sa, 0, sizeof(ap_sa));
-	ap_sa.sin_family = AF_UNSPEC;
 
-	*ap_sa_list = realloc(*ap_sa_list, (sa_list_len + 1) * sizeof(ap_sa));
+	if (sentinel) {
+		memset(&ap_sa, 0, sizeof(ap_sa));
+		ap_sa.sin_family = AF_UNSPEC;
 
-	memcpy(&((*ap_sa_list)[sa_list_len]), &ap_sa, sizeof(ap_sa));
+		*ap_sa_list = realloc(*ap_sa_list,
+					(sa_list_len + 1) * sizeof(ap_sa));
+
+		memcpy(&((*ap_sa_list)[sa_list_len]), &ap_sa, sizeof(ap_sa));
+	}
 
 	return sa_list_len;
 
@@ -455,6 +460,7 @@ void ap_htop_inet6(const struct in6_addr *addr,
 int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 		      struct sockaddr_in6 **ap_sa6_list,
 		      const int max_sa6_list_len,
+		      const unsigned int sentinel,
 		      char *ap_err_str,
 		      const unsigned int ap_err_str_size)
 {
@@ -530,13 +536,16 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 		((sa6_list_len < max_sa6_list_len ) ||
 						(max_sa6_list_len == 0)));
 
-	memset(&ap_sa6, 0, sizeof(ap_sa6));
-	ap_sa6.sin6_family = AF_UNSPEC;
+	if (sentinel) {
+		memset(&ap_sa6, 0, sizeof(ap_sa6));
+		ap_sa6.sin6_family = AF_UNSPEC;
 
-	*ap_sa6_list = realloc(*ap_sa6_list, (sa6_list_len + 1) *
+		*ap_sa6_list = realloc(*ap_sa6_list, (sa6_list_len + 1) *
 							sizeof(ap_sa6));
 
-	memcpy(&((*ap_sa6_list)[sa6_list_len]), &ap_sa6, sizeof(ap_sa6));
+		memcpy(&((*ap_sa6_list)[sa6_list_len]), &ap_sa6,
+								sizeof(ap_sa6));
+	}
 
 	return sa6_list_len;
 
