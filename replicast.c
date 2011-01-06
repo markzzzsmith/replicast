@@ -2284,7 +2284,7 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 {
 	int sock_fd;
 	uint8_t ttl;
-	uint8_t mcloop;
+	uint8_t loop;
 	int ret;
 
 
@@ -2305,12 +2305,12 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 	}
 
 	if (mc_loop == 1) {
-		mcloop = 1;
+		loop = 1;
 	} else {
-		mcloop = 0;
+		loop = 0;
 	}
-	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_LOOP,
-		&mc_loop, sizeof(mc_loop));
+	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop,
+		sizeof(loop));
 	if (ret == -1) {
 		return -1;
 	}
@@ -2349,6 +2349,9 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 {
 	int sock_fd;
 	int ret;
+	int32_t hops;
+	uint32_t loop;
+	uint32_t out_ifidx;
 
 
 	log_debug_med("%s() entry\n", __func__);
@@ -2359,23 +2362,32 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 	}
 
 	if (mc_hops > 0) {
+		hops = mc_hops & 0xff;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-			&mc_hops, sizeof(mc_hops));	
+			&hops, sizeof(hops));	
 		if (ret == -1) {
 			return -1;
 		}
 	}
 
-	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &mc_loop,
-		sizeof(mc_loop));
+	if (mc_loop == 1) {
+		loop = 1;
+	} else {
+		loop = 0;
+	}
+	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop,
+		sizeof(loop));
 	if (ret == -1) {
 		return -1;
 	}
 
-	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-		&out_intf_idx, sizeof(out_intf_idx));
-	if (ret == -1) {
-		return -1;
+	if (out_intf_idx) {
+		out_ifidx = out_intf_idx;
+		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			&out_ifidx, sizeof(out_ifidx));
+		if (ret == -1) {
+			return -1;
+		}
 	}
 
 	log_debug_med("%s() exit\n", __func__);
