@@ -329,14 +329,12 @@ void close_inet6_tx_mc_sock(int sock_fd);
 int inet_tx_mcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
- 		  const struct sockaddr_in inet_mc_dests[],
-		  const unsigned int mc_dests_num);
+ 		  const struct sockaddr_in inet_mc_dests[]);
 
 int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct sockaddr_in6 inet6_mc_dests[],
-		   const unsigned int mc_dests_num);
+ 		   const struct sockaddr_in6 inet6_mc_dests[]);
 
 void close_sockets(const struct socket_fds *sock_fds);
 
@@ -713,13 +711,13 @@ void init_prog_parms(struct program_parameters *prog_parms)
 
 	prog_parms->become_daemon = 1;
 
-	prog_parms->inet_rx_sock_parms.mc_group.s_addr = INADDR_NONE;
+	prog_parms->inet_rx_sock_parms.mc_group.s_addr = ntohl(INADDR_NONE);
 	prog_parms->inet_rx_sock_parms.port = 0;
-	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = INADDR_ANY;
+	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = ntohl(INADDR_ANY);
 
 	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
 	prog_parms->inet_tx_sock_parms.mc_loop = 0;
-	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = INADDR_ANY;
+	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = ntohl(INADDR_ANY);
 	prog_parms->inet_tx_sock_parms.mc_dests = NULL;
 	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
 
@@ -1023,7 +1021,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				break;
 			}
 		} else {
-			if (in_intf_addr.s_addr != INADDR_NONE) {
+			if (in_intf_addr.s_addr != ntohl(INADDR_NONE)) {
 				prog_parms->inet_rx_sock_parms.in_intf_addr =
 					in_intf_addr;
 			}
@@ -1378,7 +1376,7 @@ void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 
 	log_msg(LOG_SEV_INFO, "inet tx opts: ");
 
-	if (inet_tx_parms->out_intf_addr.s_addr == INADDR_ANY) {
+	if (inet_tx_parms->out_intf_addr.s_addr == ntohl(INADDR_ANY)) {
 		log_msg(LOG_SEV_INFO, "out intf rt table");
 	} else {
 		inet_ntop(AF_INET, &inet_tx_parms->out_intf_addr,
@@ -1574,8 +1572,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests,
-				tx_sock_parms.mc_dests_num);
+				tx_sock_parms.mc_dests);
 			pkt_counters->inet_out_pkts +=
 						tx_sock_parms.mc_dests_num;
 		}
@@ -1618,8 +1615,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests,
-				tx_sock_parms.mc_dests_num);
+				tx_sock_parms.mc_dests);
 			pkt_counters->inet6_out_pkts +=
 						tx_sock_parms.mc_dests_num;
 		}
@@ -1671,13 +1667,11 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms.mc_dests,
-				inet_tx_sock_parms.mc_dests_num);
+				inet_tx_sock_parms.mc_dests);
 			pkt_counters->inet_out_pkts +=
 					inet_tx_sock_parms.mc_dests_num;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet6_tx_sock_parms.mc_dests,
-				inet6_tx_sock_parms.mc_dests_num);
+				inet6_tx_sock_parms.mc_dests);
 			pkt_counters->inet6_out_pkts +=
 					inet6_tx_sock_parms.mc_dests_num;
 		}
@@ -1720,8 +1714,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests,
-				tx_sock_parms.mc_dests_num);
+				tx_sock_parms.mc_dests);
 			pkt_counters->inet6_out_pkts +=
 						tx_sock_parms.mc_dests_num;
 		}
@@ -1764,8 +1757,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests,
-				tx_sock_parms.mc_dests_num);
+				tx_sock_parms.mc_dests);
 			pkt_counters->inet_out_pkts +=
 						tx_sock_parms.mc_dests_num;
 		}
@@ -1814,13 +1806,11 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms.mc_dests,
-				inet_tx_sock_parms.mc_dests_num);
+				inet_tx_sock_parms.mc_dests);
 			pkt_counters->inet_out_pkts +=
 						inet_tx_sock_parms.mc_dests_num;
 			inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet6_tx_sock_parms.mc_dests,
-				inet6_tx_sock_parms.mc_dests_num);
+				inet6_tx_sock_parms.mc_dests);
 			pkt_counters->inet6_out_pkts +=
 					inet6_tx_sock_parms.mc_dests_num;
 		}
@@ -2157,7 +2147,7 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 		return -1;
 	}
 
-	if (IN_MULTICAST(&mc_group)) {
+	if (IN_MULTICAST(ntohl(mc_group.s_addr))) {
 		/* setsockopt() to join mcast group */
 		ip_mcast_req.imr_multiaddr = mc_group;
 		ip_mcast_req.imr_interface = in_intf_addr;
@@ -2403,25 +2393,28 @@ void close_inet6_tx_mc_sock(int sock_fd)
 int inet_tx_mcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
- 		  const struct sockaddr_in inet_mc_dests[],
-		  const unsigned int mc_dests_num)
+ 		  const struct sockaddr_in inet_mc_dests[])
 {
-	unsigned int i;
+	const struct sockaddr_in *sa_mc_dest;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	for (i = 0; i < mc_dests_num; i++) {
-		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
-			(struct sockaddr *)&inet_mc_dests[i],
+	sa_mc_dest = inet_mc_dests;
+
+	while (sa_mc_dest->sin_family == AF_INET) {
+		ret = sendto(sock_fd, pkt, pkt_len, 0,
+			(struct sockaddr *)sa_mc_dest,
 			sizeof(struct sockaddr_in));
 		if (ret != -1) {
 			tx_success++;
 		}
 		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
+
+		sa_mc_dest++;
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -2434,27 +2427,30 @@ int inet_tx_mcast(const int sock_fd,
 int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct sockaddr_in6 inet6_mc_dests[],
-		   const unsigned int mc_dests_num)
+ 		   const struct sockaddr_in6 inet6_mc_dests[])
 {
-	unsigned int i;
+	const struct sockaddr_in6 *sa6_mc_dest;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	for (i = 0; i < mc_dests_num; i++) {
+	sa6_mc_dest = inet6_mc_dests;
+
+	while (sa6_mc_dest->sin6_family == AF_INET6) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
-			(struct sockaddr *)&inet6_mc_dests[i],
+			(struct sockaddr *)sa6_mc_dest,
 			sizeof(struct sockaddr_in6));
 		if (ret != -1) {
 			tx_success++;
 		}
 		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
-	}
 
+		sa6_mc_dest++;
+	}
+	
 	log_debug_med("%s() exit\n", __func__);
 
 	return tx_success;
