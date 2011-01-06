@@ -2141,20 +2141,17 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	/* socket() */
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
 		return -1;
 	}
 
-	/* allow duplicate binds to group and UDP port */
 	ret = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &one,
 		sizeof(one));
 	if (ret == -1) {
 		return -1;
 	}
 
-	/* bind() to UDP port */
 	memset(&sa_in_mcaddr, 0, sizeof(sa_in_mcaddr));
 	sa_in_mcaddr.sin_family = AF_INET;
 	sa_in_mcaddr.sin_addr =  mc_group;
@@ -2166,7 +2163,6 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 	}
 
 	if (IN_MULTICAST(ntohl(mc_group.s_addr))) {
-		/* setsockopt() to join mcast group */
 		ip_mcast_req.imr_multiaddr = mc_group;
 		ip_mcast_req.imr_interface = in_intf_addr;
 		ret = setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
@@ -2211,7 +2207,6 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	/* socket() */
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
 		log_debug_low("%s(): socket() == %d\n", __func__, sock_fd);
@@ -2220,7 +2215,6 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 		return -1;
 	}
 
-	/* allow duplicate binds to group and UDP port */
 	ret = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &one,
 		sizeof(one));
 	if (ret == -1) {
@@ -2231,7 +2225,6 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 		return -1;
 	}
 
-	/* bind() to UDP port*/
 	memset(&sa_in6_mcaddr, 0, sizeof(sa_in6_mcaddr));
 	sa_in6_mcaddr.sin6_family = AF_INET6;
 	sa_in6_mcaddr.sin6_addr = mc_group;
@@ -2249,7 +2242,6 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 	}
 
 	if (IN6_IS_ADDR_MULTICAST(&mc_group)) {
-		/* setsockopt() to join mcast group */
 		ipv6_mcast_req.ipv6mr_multiaddr = mc_group;
 		ipv6_mcast_req.ipv6mr_interface = in_intf_idx;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
