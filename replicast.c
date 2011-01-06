@@ -1994,7 +1994,10 @@ void install_sigterm_handler(struct sigaction *sigterm_action)
 	log_debug_med("%s() entry\n", __func__);
 
 	sigterm_action->sa_handler = sigterm_handler;
-        sigemptyset(&(sigterm_action->sa_mask));
+
+        sigemptyset(&sigterm_action->sa_mask);
+	sigaddset(&sigterm_action->sa_mask, SIGINT);
+
         sigterm_action->sa_flags = 0;
 
         sigaction(SIGTERM, sigterm_action, NULL);
@@ -2011,7 +2014,10 @@ void install_sigint_handler(struct sigaction *sigint_action)
 	log_debug_med("%s() entry\n", __func__);
 
 	sigint_action->sa_handler = sigint_handler;
-        sigemptyset(&(sigint_action->sa_mask));
+
+        sigemptyset(&sigint_action->sa_mask);
+	sigaddset(&sigint_action->sa_mask, SIGTERM);
+
         sigint_action->sa_flags = 0;
 
         sigaction(SIGINT, sigint_action, NULL);
@@ -2028,8 +2034,8 @@ void install_sigusr1_handler(struct sigaction *sigusr1_action)
 	log_debug_med("%s() entry\n", __func__);
 
 	sigusr1_action->sa_handler = sigusr1_handler;
-        sigemptyset(&(sigusr1_action->sa_mask));
-        sigusr1_action->sa_flags = 0;
+        sigemptyset(&sigusr1_action->sa_mask);
+        sigusr1_action->sa_flags = SA_RESTART;
 
         sigaction(SIGUSR1, sigusr1_action, NULL);
 
@@ -2046,7 +2052,7 @@ void install_sigusr2_handler(struct sigaction *sigusr2_action)
 
 	sigusr2_action->sa_handler = sigusr2_handler;
         sigemptyset(&(sigusr2_action->sa_mask));
-        sigusr2_action->sa_flags = 0;
+        sigusr2_action->sa_flags = SA_RESTART;
 
         sigaction(SIGUSR2, sigusr2_action, NULL);
 
