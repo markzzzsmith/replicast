@@ -198,7 +198,8 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 {
 	int sa_list_len = 0;
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
-	int more_aip_str = 0;
+	unsigned int more_aip_str = 0;
+	unsigned int aip_str_error = 0;	
 	const char *curr_aip_str = NULL;
 	char *ap_csv_comma_ptr = NULL;
 	char *aip_str_comma_ptr = NULL;
@@ -207,6 +208,8 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 	unsigned int port;
 	int ret;
 	enum aip_ptoh_errors aip_ptoh_err;
+	void *realloc_ret;
+	unsigned int realloc_fail = 0;
 
 
 	if (*ap_sa_list != NULL) {
@@ -234,17 +237,22 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 			ap_sa.sin_port = htons(port);
 			sa_list_len++;
 
-			*ap_sa_list = realloc(*ap_sa_list,
+			realloc_ret  = realloc(*ap_sa_list,
 					      sa_list_len * sizeof(ap_sa));
-			memcpy(&((*ap_sa_list)[sa_list_len - 1]), &ap_sa,
-			       sizeof(ap_sa));
+			if (realloc_ret != NULL) {
+				*ap_sa_list = realloc_ret;
+				memcpy(&((*ap_sa_list) [sa_list_len - 1]),
+					&ap_sa, sizeof(ap_sa));
+			} else {
+				realloc_fail = 1;
+			}
 		} else {
 			if (ap_err_str != NULL && ap_err_str_size > 0) {
 				strncpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
 				ap_err_str[ap_err_str_size] = '\0';
 			}
-			return -1;
+			aip_str_error = 1;
 		}
 
 		ap_csv_comma_ptr = strchr(curr_aip_str, ',');
@@ -263,22 +271,38 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 			more_aip_str = 1;
 		}
 
-	} while (more_aip_str &&
+	} while (!realloc_fail &&
+		 !aip_str_error &&
+		 more_aip_str &&
 		 sa_list_len < INT_MAX &&
 		((sa_list_len < max_sa_list_len ) || (max_sa_list_len == 0)));
 
 
-	if (sentinel) {
+	if (sentinel && !aip_str_error && !realloc_fail) {
 		memset(&ap_sa, 0, sizeof(ap_sa));
 		ap_sa.sin_family = AF_UNSPEC;
 
-		*ap_sa_list = realloc(*ap_sa_list,
+		realloc_ret = realloc(*ap_sa_list,
 					(sa_list_len + 1) * sizeof(ap_sa));
 
-		memcpy(&((*ap_sa_list)[sa_list_len]), &ap_sa, sizeof(ap_sa));
+		if (realloc_ret != NULL) {
+			*ap_sa_list = realloc_ret;
+			memcpy(&((*ap_sa_list)[sa_list_len]), &ap_sa,
+				sizeof(ap_sa));
+		} else {
+			realloc_fail = 1;
+		}
 	}
 
-	return sa_list_len;
+	if (realloc_fail || aip_str_error) {
+		if (*ap_sa_list != NULL) {
+			free(*ap_sa_list);
+			*ap_sa_list = NULL;
+		}
+		return -1;
+	} else {
+		return sa_list_len;
+	}
 
 }
 
@@ -466,7 +490,8 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 {
 	int sa6_list_len = 0;
 	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
-	int more_aip_str = 0;
+	unsigned int more_aip_str = 0;
+	unsigned int aip_str_error = 0;
 	const char *curr_aip_str = NULL;
 	char *ap_csv_comma_ptr = NULL;
 	char *aip_str_comma_ptr = NULL;
@@ -475,6 +500,8 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 	unsigned int port;
 	int ret;
 	enum aip_ptoh_errors aip_ptoh_err;
+	void *realloc_ret;
+	unsigned int realloc_fail = 0;
 
 
 	if (*ap_sa6_list != NULL) {
@@ -502,17 +529,22 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 			ap_sa6.sin6_port = htons(port);
 			sa6_list_len++;
 
-			*ap_sa6_list = realloc(*ap_sa6_list,
+			realloc_ret = realloc(*ap_sa6_list,
 					      sa6_list_len * sizeof(ap_sa6));
-			memcpy(&((*ap_sa6_list)[sa6_list_len - 1]), &ap_sa6,
-			       sizeof(ap_sa6));
+			if (realloc_ret != NULL) {
+				*ap_sa6_list = realloc_ret;
+				memcpy(&((*ap_sa6_list)[sa6_list_len - 1]),
+					&ap_sa6, sizeof(ap_sa6));
+			} else {
+				realloc_fail = 1;
+			}
 		} else {
 			if (ap_err_str != NULL && ap_err_str_size > 0) {
 				strncpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
 				ap_err_str[ap_err_str_size] = '\0';
 			}
-			return -1;
+			aip_str_error = 1;
 		}
 
 		ap_csv_comma_ptr = strchr(curr_aip_str, ',');
@@ -531,23 +563,38 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 			more_aip_str = 1;
 		}
 
-	} while (more_aip_str &&
+	} while (!realloc_fail &&
+		 !aip_str_error &&
+		 more_aip_str &&
 		 sa6_list_len < INT_MAX &&
 		((sa6_list_len < max_sa6_list_len ) ||
 						(max_sa6_list_len == 0)));
 
-	if (sentinel) {
+	if (sentinel && !aip_str_error && !realloc_fail) {
 		memset(&ap_sa6, 0, sizeof(ap_sa6));
 		ap_sa6.sin6_family = AF_UNSPEC;
 
-		*ap_sa6_list = realloc(*ap_sa6_list, (sa6_list_len + 1) *
+		realloc_ret = realloc(*ap_sa6_list, (sa6_list_len + 1) *
 							sizeof(ap_sa6));
+		if (realloc_ret != NULL) {
+			*ap_sa6_list = realloc_ret;
+			memcpy(&((*ap_sa6_list)[sa6_list_len]), &ap_sa6,
+							sizeof(ap_sa6));
+		} else {
+			realloc_fail = 1;
+		}
 
-		memcpy(&((*ap_sa6_list)[sa6_list_len]), &ap_sa6,
-								sizeof(ap_sa6));
 	}
 
-	return sa6_list_len;
+	if (realloc_fail || aip_str_error) {
+		if (*ap_sa6_list != NULL) {
+			free(*ap_sa6_list);
+			*ap_sa6_list = NULL;
+		}
+		return -1;
+	} else {
+		return sa6_list_len;
+	}
 
 }
 
