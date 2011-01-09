@@ -31,7 +31,7 @@ int aip_ptoh_inet(const char *aip_str,
                   struct in_addr *addr,
                   struct in_addr *if_addr,
                   unsigned int *port,
-		  enum aip_ptoh_errors *aip_ptoh_err)
+		  enum inetaddr_errors *aip_ptoh_err)
 {
 	char str[AIP_STR_INET_MAX_LEN + 1];
 	char *addr_str = NULL;
@@ -44,7 +44,7 @@ int aip_ptoh_inet(const char *aip_str,
 	if_addr->s_addr = INADDR_NONE;
 	*port = 0;
 	if (aip_ptoh_err != NULL) {
-		*aip_ptoh_err = AIP_PTOX_ERR_NO_ERROR;
+		*aip_ptoh_err = INETADDR_ERR_NONE;
 	}
 
 	strncpy(str, aip_str, AIP_STR_INET_MAX_LEN);
@@ -74,7 +74,7 @@ int aip_ptoh_inet(const char *aip_str,
 
 	if (inet_pton(AF_INET, addr_str, addr) != 1) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
+			*aip_ptoh_err = INETADDR_ERR_ADDR;
 		}
 		return -1;
 	}
@@ -82,7 +82,7 @@ int aip_ptoh_inet(const char *aip_str,
 	if ((if_addr_str != NULL) &&
 				 (inet_if_addr(if_addr_str, if_addr) == -1)) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOX_ERR_BAD_IF_ADDR;
+			*aip_ptoh_err = INETADDR_ERR_IFADDR;
 		}
 		return -1;
 	}
@@ -91,7 +91,7 @@ int aip_ptoh_inet(const char *aip_str,
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
+				*aip_ptoh_err = INETADDR_ERR_PORT;
 			}
 			*port = 0;
 			return -1;
@@ -189,41 +189,36 @@ void ap_htop_inet(const struct in_addr *addr,
 }
 
 
-int ap_pton_inet_csv(const char *ap_inet_csv_str,
-		     struct sockaddr_in **ap_sa_list,
-		     const int max_sa_list_len,
-		     const unsigned int sentinel,
+
+int ap_pton_inet_csv(const char *ap_csv_str,
+		     struct sockaddr_in *sa_list,
+		     const int max_sa_list_entries,
+		     const unsigned char ignore_errors,
+		     const unsigned char sentinel,
+		     enum inetaddr_errors *ap_err,
 		     char *ap_err_str,
 		     const unsigned int ap_err_str_size)
 {
-	int sa_list_len = 0;
-	char aip_str[AIP_STR_INET_MAX_LEN + 1];
-	unsigned int more_aip_str = 0;
-	unsigned int aip_str_error = 0;	
 	const char *curr_aip_str = NULL;
-	char *ap_csv_comma_ptr = NULL;
-	char *aip_str_comma_ptr = NULL;
+	char aip_str[AIP_STR_INET_MAX_LEN + 1];
+	char *aip_str_comma = NULL;
 	struct sockaddr_in ap_sa;
+	int ret;
 	struct in_addr tmp_in_addr;
 	unsigned int port;
-	int ret;
-	enum aip_ptoh_errors aip_ptoh_err;
-	void *realloc_ret;
-	unsigned int realloc_fail = 0;
+	enum inetaddr_errors aip_ptoh_err;
+	int sa_list_len = 0;
+	unsigned char more_aip_str;
 
 
-	if (*ap_sa_list != NULL) {
-		return -1;
-	}
-
-	curr_aip_str = ap_inet_csv_str;
+	curr_aip_str = ap_csv_str;
 
 	strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
 	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
 
-	aip_str_comma_ptr = strchr(aip_str, ',');
-	if (aip_str_comma_ptr != NULL) {
-		*aip_str_comma_ptr = '\0';
+	aip_str_comma = strchr(aip_str, ',');
+	if (aip_str_comma != NULL) {
+		*aip_str_comma = '\0';
 	}
 
 	do {
@@ -231,79 +226,53 @@ int ap_pton_inet_csv(const char *ap_inet_csv_str,
 
 		ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
 				    &port, &aip_ptoh_err);
-
 		if (ret != -1) {
 			ap_sa.sin_family = AF_INET;
 			ap_sa.sin_port = htons(port);
 			sa_list_len++;
 
-			realloc_ret  = realloc(*ap_sa_list,
-					      sa_list_len * sizeof(ap_sa));
-			if (realloc_ret != NULL) {
-				*ap_sa_list = realloc_ret;
-				memcpy(&((*ap_sa_list) [sa_list_len - 1]),
-					&ap_sa, sizeof(ap_sa));
-			} else {
-				realloc_fail = 1;
+			if (sa_list != NULL) {
+				sa_list[sa_list_len - 1] = ap_sa;
 			}
+			
 		} else {
-			if (ap_err_str != NULL && ap_err_str_size > 0) {
-				strncpy(ap_err_str, aip_str,
+			if (!ignore_errors) {
+				if (aip_ptoh_err != INETADDR_ERR_IFADDR) {
+					strncpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
-				ap_err_str[ap_err_str_size] = '\0';
+					ap_err_str[ap_err_str_size] = '\0';
+					*ap_err = aip_ptoh_err;
+					return -1;
+				}
 			}
-			aip_str_error = 1;
 		}
 
-		ap_csv_comma_ptr = strchr(curr_aip_str, ',');
-		if (ap_csv_comma_ptr == NULL) {
+		aip_str_comma = strchr(curr_aip_str, ',');
+		if (aip_str_comma == NULL) {
 			more_aip_str = 0;
 		} else {
-			curr_aip_str = ap_csv_comma_ptr + 1;
+			curr_aip_str = aip_str_comma + 1;
 
 			strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
 			aip_str[AIP_STR_INET_MAX_LEN] = '\0';
 
-			aip_str_comma_ptr = strchr(aip_str, ',');
-			if (aip_str_comma_ptr != NULL) {
-				*aip_str_comma_ptr = '\0';
+			aip_str_comma = strchr(aip_str, ',');
+			if (aip_str_comma != NULL) {
+				*aip_str_comma = '\0';
 			}
 			more_aip_str = 1;
 		}
-
-	} while (!realloc_fail &&
-		 !aip_str_error &&
-		 more_aip_str &&
+	} while (more_aip_str &&
 		 sa_list_len < INT_MAX &&
-		((sa_list_len < max_sa_list_len ) || (max_sa_list_len == 0)));
+		 (sa_list_len < max_sa_list_entries));
 
-
-	if (sentinel && !aip_str_error && !realloc_fail) {
+	if (sentinel && sa_list != NULL) {
 		memset(&ap_sa, 0, sizeof(ap_sa));
 		ap_sa.sin_family = AF_UNSPEC;
-
-		realloc_ret = realloc(*ap_sa_list,
-					(sa_list_len + 1) * sizeof(ap_sa));
-
-		if (realloc_ret != NULL) {
-			*ap_sa_list = realloc_ret;
-			memcpy(&((*ap_sa_list)[sa_list_len]), &ap_sa,
-				sizeof(ap_sa));
-		} else {
-			realloc_fail = 1;
-		}
+		sa_list[sa_list_len] = ap_sa;
 	}
-
-	if (realloc_fail || aip_str_error) {
-		if (*ap_sa_list != NULL) {
-			free(*ap_sa_list);
-			*ap_sa_list = NULL;
-		}
-		return -1;
-	} else {
-		return sa_list_len;
-	}
-
+	
+	return sa_list_len;
 }
 
 
@@ -311,7 +280,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		   struct in6_addr *addr,
 		   unsigned int *ifidx,
 		   unsigned int *port,
-		   enum aip_ptoh_errors *aip_ptoh_err)
+		   enum inetaddr_errors *aip_ptoh_err)
 {
 	char str[AIP_STR_INET6_MAX_LEN + 1];
 	char *addr_str = NULL;
@@ -324,7 +293,7 @@ int aip_ptoh_inet6(const char *aip_str,
 	*ifidx = 0;
 	*port = 0;
 	if (aip_ptoh_err != NULL) {
-		*aip_ptoh_err = AIP_PTOX_ERR_NO_ERROR;
+		*aip_ptoh_err = INETADDR_ERR_NONE;
 	}
 
 	strncpy(str, aip_str, AIP_STR_INET6_MAX_LEN);
@@ -332,7 +301,7 @@ int aip_ptoh_inet6(const char *aip_str,
 
 	if (str[0] != '[') {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
+			*aip_ptoh_err = INETADDR_ERR_ADDR;
 		}
 		return -1;
 	}
@@ -355,7 +324,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		s++;
 		if (*s != ':') {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
+				*aip_ptoh_err = INETADDR_ERR_PORT;
 			}
 			return -1;
 		}	
@@ -367,7 +336,7 @@ int aip_ptoh_inet6(const char *aip_str,
 
 	if (inet_pton(AF_INET6, addr_str, addr) != 1) {
 		if (aip_ptoh_err != NULL) {
-			*aip_ptoh_err = AIP_PTOX_ERR_BAD_ADDR;
+			*aip_ptoh_err = INETADDR_ERR_ADDR;
 		}
 		return -1;
 	}
@@ -380,7 +349,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		*port = atoi(port_str);
 		if (*port > 0xffff) {
 			if (aip_ptoh_err != NULL) {
-				*aip_ptoh_err = AIP_PTOX_ERR_BAD_PORT;
+				*aip_ptoh_err = INETADDR_ERR_PORT;
 			}
 			*port = 0;
 			return -1;
@@ -499,7 +468,7 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 	unsigned int ifidx;
 	unsigned int port;
 	int ret;
-	enum aip_ptoh_errors aip_ptoh_err;
+	enum inetaddr_errors aip_ptoh_err;
 	void *realloc_ret;
 	unsigned int realloc_fail = 0;
 
