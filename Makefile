@@ -19,4 +19,4 @@ stringnz : stringnz.h stringnz.c
 	$(CC) $(CFLAGS) -c stringnz.c -o stringnz.o
 
 clean :
-	rm -f replicast log.o inetaddr.o
+	rm -f replicast log.o inetaddr.o stringnz.o
