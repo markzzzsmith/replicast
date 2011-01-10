@@ -23,8 +23,12 @@
 
 #include "inetaddr.h"
 
+#include "stringnz.h"
+
 
 static int get_if_addr(const char *ifname, struct in_addr *addr);
+
+static void zero_comma(char *str);
 
 
 int aip_ptoh_inet(const char *aip_str,
@@ -47,8 +51,7 @@ int aip_ptoh_inet(const char *aip_str,
 		*aip_ptoh_err = INETADDR_ERR_NONE;
 	}
 
-	strncpy(str, aip_str, AIP_STR_INET_MAX_LEN);
-	str[AIP_STR_INET_MAX_LEN] = '\0';
+	strnzcpy(str, aip_str, AIP_STR_INET_MAX_LEN);
 
 	addr_str = str;
 
@@ -155,8 +158,7 @@ void aip_htop_inet(const struct in_addr *addr,
 
 	snprintf(s, aip_tmp_str_bytes_left, "%d", port);
 	
-	strncpy(aip_str, aip_tmp_str, aip_str_size);
-	aip_str[aip_str_size - 1] = '\0';	
+	strnzcpy(aip_str, aip_tmp_str, aip_str_size);
 
 }
 
@@ -183,8 +185,7 @@ void ap_htop_inet(const struct in_addr *addr,
 
 	aip_htop_inet(addr, &empty_ifaddr, port, aip_tmp_str, aip_tmp_str_size);
 
-	strncpy(ap_str, aip_tmp_str, ap_str_size);
-	ap_str[ap_str_size - 1] = '\0';
+	strnzcpy(ap_str, aip_tmp_str, ap_str_size);
 
 }
 
@@ -201,7 +202,7 @@ int ap_pton_inet_csv(const char *ap_csv_str,
 {
 	const char *curr_aip_str = NULL;
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
-	char *aip_str_comma = NULL;
+	char *curr_aip_str_comma = NULL;
 	struct sockaddr_in ap_sa;
 	int ret;
 	struct in_addr tmp_in_addr;
@@ -213,13 +214,8 @@ int ap_pton_inet_csv(const char *ap_csv_str,
 
 	curr_aip_str = ap_csv_str;
 
-	strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
-	aip_str[AIP_STR_INET_MAX_LEN] = '\0';
-
-	aip_str_comma = strchr(aip_str, ',');
-	if (aip_str_comma != NULL) {
-		*aip_str_comma = '\0';
-	}
+	strnzcpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
+	zero_comma(aip_str);
 
 	do {
 		memset(&ap_sa, 0, sizeof(ap_sa));
@@ -227,44 +223,43 @@ int ap_pton_inet_csv(const char *ap_csv_str,
 		ret = aip_ptoh_inet(aip_str, &ap_sa.sin_addr, &tmp_in_addr,
 				    &port, &aip_ptoh_err);
 		if (ret != -1) {
-			ap_sa.sin_family = AF_INET;
-			ap_sa.sin_port = htons(port);
 			sa_list_len++;
 
 			if (sa_list != NULL) {
+				ap_sa.sin_family = AF_INET;
+				ap_sa.sin_port = htons(port);
 				sa_list[sa_list_len - 1] = ap_sa;
 			}
 			
 		} else {
 			if (!ignore_errors) {
 				if (aip_ptoh_err != INETADDR_ERR_IFADDR) {
-					strncpy(ap_err_str, aip_str,
+					if (ap_err_str != NULL &&
+					    ap_err_str_size > 0) {
+						strnzcpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
-					ap_err_str[ap_err_str_size] = '\0';
+					}
 					*ap_err = aip_ptoh_err;
 					return -1;
 				}
 			}
 		}
 
-		aip_str_comma = strchr(curr_aip_str, ',');
-		if (aip_str_comma == NULL) {
+		curr_aip_str_comma = strchr(curr_aip_str, ',');
+		if (curr_aip_str_comma == NULL) {
 			more_aip_str = 0;
 		} else {
-			curr_aip_str = aip_str_comma + 1;
+			curr_aip_str = curr_aip_str_comma + 1;
 
-			strncpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
-			aip_str[AIP_STR_INET_MAX_LEN] = '\0';
+			strnzcpy(aip_str, curr_aip_str, AIP_STR_INET_MAX_LEN);
+			zero_comma(aip_str);
 
-			aip_str_comma = strchr(aip_str, ',');
-			if (aip_str_comma != NULL) {
-				*aip_str_comma = '\0';
-			}
 			more_aip_str = 1;
 		}
 	} while (more_aip_str &&
 		 sa_list_len < INT_MAX &&
-		 (sa_list_len < max_sa_list_entries));
+		 ((sa_list_len < max_sa_list_entries) ||
+		  max_sa_list_entries == 0));
 
 	if (sentinel && sa_list != NULL) {
 		memset(&ap_sa, 0, sizeof(ap_sa));
@@ -296,8 +291,7 @@ int aip_ptoh_inet6(const char *aip_str,
 		*aip_ptoh_err = INETADDR_ERR_NONE;
 	}
 
-	strncpy(str, aip_str, AIP_STR_INET6_MAX_LEN);
-	str[AIP_STR_INET6_MAX_LEN] = '\0';
+	strnzcpy(str, aip_str, AIP_STR_INET6_MAX_LEN);
 
 	if (str[0] != '[') {
 		if (aip_ptoh_err != NULL) {
@@ -401,8 +395,7 @@ void aip_htop_inet6(const struct in6_addr *addr,
 		s++;
 		aip_tmp_str_bytes_left--;
 
-		strncpy(s, tmp_ifname, aip_tmp_str_bytes_left);
-		s[aip_tmp_str_bytes_left - 1] = '\0';
+		strnzcpy(s, tmp_ifname, aip_tmp_str_bytes_left);
 
 		aip_tmp_str_bytes_left -= strlen(s) + 1;
 		s = strchr(s, '\0');
@@ -418,8 +411,7 @@ void aip_htop_inet6(const struct in6_addr *addr,
 
 	snprintf(s, aip_tmp_str_bytes_left, "%d", port);
 	
-	strncpy(aip_str, aip_tmp_str, aip_str_size);
-	aip_str[aip_str_size - 1] = '\0';	
+	strnzcpy(aip_str, aip_tmp_str, aip_str_size);
 
 }
 
@@ -444,8 +436,7 @@ void ap_htop_inet6(const struct in6_addr *addr,
 
 	aip_htop_inet6(addr, 0, port, aip_tmp_str, aip_tmp_str_size);
 
-	strncpy(ap_str, aip_tmp_str, ap_str_size);
-	ap_str[ap_str_size - 1] = '\0';
+	strnzcpy(ap_str, aip_tmp_str, ap_str_size);
 
 }
 
@@ -479,8 +470,7 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 
 	curr_aip_str = ap_inet6_csv_str;
 
-	strncpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
-	aip_str[AIP_STR_INET6_MAX_LEN] = '\0';
+	strnzcpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
 
 	aip_str_comma_ptr = strchr(aip_str, ',');
 	if (aip_str_comma_ptr != NULL) {
@@ -509,9 +499,8 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 			}
 		} else {
 			if (ap_err_str != NULL && ap_err_str_size > 0) {
-				strncpy(ap_err_str, aip_str,
+				strnzcpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
-				ap_err_str[ap_err_str_size] = '\0';
 			}
 			aip_str_error = 1;
 		}
@@ -522,8 +511,7 @@ int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
 		} else {
 			curr_aip_str = ap_csv_comma_ptr + 1;
 
-			strncpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
-			aip_str[AIP_STR_INET6_MAX_LEN] = '\0';
+			strnzcpy(aip_str, curr_aip_str, AIP_STR_INET6_MAX_LEN);
 
 			aip_str_comma_ptr = strchr(aip_str, ',');
 			if (aip_str_comma_ptr != NULL) {
@@ -608,8 +596,7 @@ static int get_if_addr(const char *ifname, struct in_addr *addr)
 
 	memset(&ifr, 0, sizeof(ifr));
 
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-	ifr.ifr_name[IFNAMSIZ-1] = '\0';	
+	strnzcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ioctl_ret = ioctl(sock_fd, SIOCGIFADDR, &ifr);
 
@@ -628,3 +615,17 @@ static int get_if_addr(const char *ifname, struct in_addr *addr)
 	return 0;
 
 }
+
+
+static void zero_comma(char *str)
+{
+	char *comma_pos;
+
+
+	comma_pos = strchr(str, ',');
+	if (comma_pos != NULL) {
+		*comma_pos = '\0';
+	}
+
+}
+
