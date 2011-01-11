@@ -239,7 +239,9 @@ int ap_pton_inet_csv(const char *ap_csv_str,
 						strnzcpy(ap_err_str, aip_str,
 							ap_err_str_size - 1);
 					}
-					*ap_err = aip_ptoh_err;
+					if (ap_err != NULL) {
+						*ap_err = aip_ptoh_err;
+					}
 					return -1;
 				}
 			}

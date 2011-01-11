@@ -52,7 +52,8 @@ enum VALIDATE_PROG_OPTS_VALS {
 	VPOV_ERR_INET6_OUT_INTF,
 	VPOV_ERR_INET6_DST_GRP,
 	VPOV_ERR_INET6_TX_HOPS_RANGE,
-	VPOV_ERR_UNKNOWN_ERR,
+	VPOV_ERR_UNKNOWN,
+	VPOV_ERR_MEMORY,
 	VPOV_OPTS_VALS_VALID,
 };
 
@@ -71,6 +72,7 @@ enum OPT_ERR {
 	OE_INET6_OUT_INTF,
 	OE_INET6_DST_GRPS,
 	OE_INET6_TX_HOPS_RANGE,
+	OE_MEMORY_ERROR,
 	OE_UNKNOWN_ERROR,
 };
 
@@ -969,7 +971,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 {
 	int ret;
 	struct in_addr in_intf_addr;	
-	enum aip_ptoh_errors aip_ptoh_err;
+	enum inetaddr_errors aip_ptoh_err;
 	int tx_ttl;
 	int tx_hops;
 	unsigned int out_intf_idx;
@@ -992,21 +994,21 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			&aip_ptoh_err);
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
-			case AIP_PTOX_ERR_BAD_ADDR:
+			case INETADDR_ERR_ADDR:
 				log_debug_low("%s() return "
 					"VPOV_ERR_SRC_GRP_ADDR\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_SRC_GRP_ADDR;
 				break;
-			case AIP_PTOX_ERR_BAD_IF_ADDR:
+			case INETADDR_ERR_IFADDR:
 				log_debug_low("%s() return "
 					"VPOV_ERR_IF_ADDR\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_IF_ADDR;
 				break;
-			case AIP_PTOX_ERR_BAD_PORT:
+			case INETADDR_ERR_PORT:
 				log_debug_low("%s() return "
 					"VPOV_ERR_SRC_PORT\n",
 					__func__);
@@ -1015,10 +1017,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				break;
 			default:
 				log_debug_low("%s() return "
-					"VPOV_ERR_UNKNOWN_ERR\n",
+					"VPOV_ERR_UNKNOWN\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_UNKNOWN_ERR;
+				return VPOV_ERR_UNKNOWN;
 				break;
 			}
 		} else {
@@ -1045,14 +1047,14 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			&aip_ptoh_err);
 		if (ret == -1) {
 			switch (aip_ptoh_err) {
-			case AIP_PTOX_ERR_BAD_ADDR:
+			case INETADDR_ERR_ADDR:
 				log_debug_low("%s() return "
 					"VPOV_ERR_SRC_GRP_ADDR\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_SRC_GRP_ADDR;
 				break;
-			case AIP_PTOX_ERR_BAD_PORT:
+			case INETADDR_ERR_PORT:
 				log_debug_low("%s() return "
 					"VPOV_ERR_SRC_PORT\n",
 					__func__);
@@ -1061,10 +1063,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				break;
 			default:
 				log_debug_low("%s() return "
-					"VPOV_ERR_UNKNOWN_ERR\n",
+					"VPOV_ERR_UNKNOWN\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_UNKNOWN_ERR;
+				return VPOV_ERR_UNKNOWN;
 				break;
 			}
 		} else {
@@ -1082,17 +1084,28 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 								__func__);
 		ret = ap_pton_inet_csv(
 				prog_opts->inet_tx_sock_mc_dests_str,
-				&prog_parms->inet_tx_sock_parms.mc_dests,
-				0,
-				1,
-				err_str_parm,
+				NULL, 0, 0, 0, &aip_ptoh_err, err_str_parm, 
 				err_str_size);
+		log_debug_low("%s() first ap_pton_inet_csv() call = %d\n",
+			__func__, ret);
 		if (ret == -1) {
 			log_debug_low("%s() return VPOV_ERR_INET_DST_GRP\n",
 					__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPOV_ERR_INET_DST_GRP;
 		} else {
+			prog_parms->inet_tx_sock_parms.mc_dests =
+				malloc((ret + 1) * sizeof(struct sockaddr_in));
+			if (prog_parms->inet_tx_sock_parms.mc_dests == NULL) {
+				log_debug_low("%s() return", __func__);
+				log_debug_low(" VPOV_ERR_MEMORY\n");
+				log_debug_med("%s() exit\n", __func__);
+				return VPOV_ERR_MEMORY;
+			}
+			ret = ap_pton_inet_csv(
+				prog_opts->inet_tx_sock_mc_dests_str,
+				prog_parms->inet_tx_sock_parms.mc_dests,
+				0, 1, 1, NULL, NULL, 0);
 			prog_parms->inet_tx_sock_parms.mc_dests_num = ret;
 		}
 
@@ -1239,7 +1252,10 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 	case VPOV_ERR_INET6_TX_HOPS_RANGE:
 		log_opt_error(OE_INET6_TX_HOPS_RANGE, NULL);
 		break;
-	case VPOV_ERR_UNKNOWN_ERR:
+	case VPOV_ERR_MEMORY:
+		log_opt_error(OE_MEMORY_ERROR, NULL);
+		break;
+	case VPOV_ERR_UNKNOWN:
 		log_opt_error(OE_UNKNOWN_ERROR, NULL);
 		break;
 	case VPOV_OPTS_VALS_VALID:
@@ -1497,6 +1513,10 @@ void log_opt_error(enum OPT_ERR option_err,
 		break;
 	case OE_INET6_TX_HOPS_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 transmit hop-count.\n");
+		break;
+	case OE_MEMORY_ERROR:
+		log_msg(LOG_SEV_ERR, "Fatal memory error during option ");
+		log_msg(LOG_SEV_ERR, "parsing.\n");
 		break;
 	case OE_UNKNOWN_ERROR:
 		log_msg(LOG_SEV_ERR, "Unknown option error.\n");

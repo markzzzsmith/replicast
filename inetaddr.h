@@ -30,7 +30,6 @@ enum inetaddr_errors {
 	INETADDR_ERR_ADDR,
 	INETADDR_ERR_IFADDR,
 	INETADDR_ERR_PORT,
-	INETADDR_ERR_FUNC_PARAMETER,
 };
 
 int aip_ptoh_inet(const char *aip_str,
