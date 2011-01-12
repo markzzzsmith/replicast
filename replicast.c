@@ -1095,6 +1095,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			return VPOV_ERR_INET_DST_GRP;
 		} else {
 			prog_parms->inet_tx_sock_parms.mc_dests =
+				(struct sockaddr_in *)
 				malloc((ret + 1) * sizeof(struct sockaddr_in));
 			if (prog_parms->inet_tx_sock_parms.mc_dests == NULL) {
 				log_debug_low("%s() return", __func__);
