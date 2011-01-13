@@ -29,9 +29,9 @@ enum GLOBAL_DEFS {
 enum VALIDATE_PROG_OPTS {
 	VPO_HELP,
 	VPO_ERR_UNKNOWN_OPT,
-	VPO_ERR_NO_SRC_GRP,
-	VPO_ERR_MULTI_SRC_GRPS,
-	VPO_ERR_NO_DST_GRPS,
+	VPO_ERR_NO_SRC_ADDR,
+	VPO_ERR_MULTI_SRC_ADDRS,
+	VPO_ERR_NO_DST_ADDRS,
 	VPO_MODE_INETINETINET6,
 	VPO_MODE_INETINET,
 	VPO_MODE_INETINET6,
@@ -42,15 +42,15 @@ enum VALIDATE_PROG_OPTS {
 };
 
 enum VALIDATE_PROG_OPTS_VALS {
-	VPOV_ERR_SRC_GRP_ADDR,
+	VPOV_ERR_SRC_ADDR,
 	VPOV_ERR_IF_ADDR,
 	VPOV_ERR_SRC_PORT,
 	VPOV_ERR_DST_PORT,
-	VPOV_ERR_INET_DST_GRP,
+	VPOV_ERR_INET_DST_ADDR,
 	VPOV_ERR_INET_TX_TTL_RANGE,
 	VPOV_ERR_INET_OUT_INTF,
 	VPOV_ERR_INET6_OUT_INTF,
-	VPOV_ERR_INET6_DST_GRP,
+	VPOV_ERR_INET6_DST_ADDR,
 	VPOV_ERR_INET6_TX_HOPS_RANGE,
 	VPOV_ERR_UNKNOWN,
 	VPOV_ERR_MEMORY,
@@ -59,18 +59,18 @@ enum VALIDATE_PROG_OPTS_VALS {
 
 enum OPT_ERR {
 	OE_UNKNOWN_OPT,
-	OE_NO_SRC_GRP,
-	OE_MULTI_SRC_GRPS,
-	OE_NO_DST_GRPS,
+	OE_NO_SRC_ADDR,
+	OE_MULTI_SRC_ADDRS,
+	OE_NO_DST_ADDRS,
 	OE_SRC_GRP_ADDR,
 	OE_IF_ADDR,
 	OE_SRC_PORT,
 	OE_DST_PORT,
-	OE_INET_DST_GRPS,
+	OE_INET_DST_ADDR,
 	OE_INET_TX_TTL_RANGE,
 	OE_INET_OUT_INTF,
 	OE_INET6_OUT_INTF,
-	OE_INET6_DST_GRPS,
+	OE_INET6_DST_ADDR,
 	OE_INET6_TX_HOPS_RANGE,
 	OE_MEMORY_ERROR,
 	OE_UNKNOWN_ERROR,
@@ -577,17 +577,17 @@ void get_prog_parms(int argc, char *argv[],
 		prog_parms->rc_mode = RCMODE_ERROR;
 		log_opt_error(OE_UNKNOWN_OPT, NULL);
 		break;
-	case VPO_ERR_NO_SRC_GRP:
+	case VPO_ERR_NO_SRC_ADDR:
 		prog_parms->rc_mode = RCMODE_ERROR;
-		log_opt_error(OE_NO_SRC_GRP, NULL);
+		log_opt_error(OE_NO_SRC_ADDR, NULL);
 		break;
-	case VPO_ERR_MULTI_SRC_GRPS:
+	case VPO_ERR_MULTI_SRC_ADDRS:
 		prog_parms->rc_mode = RCMODE_ERROR;
-		log_opt_error(OE_MULTI_SRC_GRPS, NULL);
+		log_opt_error(OE_MULTI_SRC_ADDRS, NULL);
 		break;
-	case VPO_ERR_NO_DST_GRPS:
+	case VPO_ERR_NO_DST_ADDRS:
 		prog_parms->rc_mode = RCMODE_ERROR;
-		log_opt_error(OE_NO_DST_GRPS, NULL);
+		log_opt_error(OE_NO_DST_ADDRS, NULL);
 		break;
 	case VPO_MODE_INETINETINET6:
 		prog_parms->rc_mode = RCMODE_INET_TO_INET_INET6;
@@ -895,24 +895,24 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 
 	if (!prog_opts->inet_rx_sock_mcgroup_set &&
 				!prog_opts->inet6_rx_sock_mcgroup_set) {
-		log_debug_low("%s() return VPO_ERR_NO_SRC_GRP\n", __func__);
+		log_debug_low("%s() return VPO_ERR_NO_SRC_ADDR\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
-		return VPO_ERR_NO_SRC_GRP;
+		return VPO_ERR_NO_SRC_ADDR;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set &&
 				prog_opts->inet6_rx_sock_mcgroup_set) {
-		log_debug_low("%s() return VPO_ERR_MULTI_SRC_GRPS\n", __func__);
+		log_debug_low("%s() return VPO_ERR_MULTI_SRC_ADDRS\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
-		return VPO_ERR_MULTI_SRC_GRPS;
+		return VPO_ERR_MULTI_SRC_ADDRS;
 	}
 
 
 	if (!prog_opts->inet_tx_sock_mc_dests_set &&
 				!prog_opts->inet6_tx_sock_mc_dests_set) {
-		log_debug_low("%s() return VPO_ERR_NO_DST_GRPS\n", __func__);
+		log_debug_low("%s() return VPO_ERR_NO_DST_ADDRS\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
-		return VPO_ERR_NO_DST_GRPS;
+		return VPO_ERR_NO_DST_ADDRS;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
@@ -996,10 +996,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			switch (aip_ptoh_err) {
 			case INETADDR_ERR_ADDR:
 				log_debug_low("%s() return "
-					"VPOV_ERR_SRC_GRP_ADDR\n",
+					"VPOV_ERR_SRC_ADDR\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_SRC_GRP_ADDR;
+				return VPOV_ERR_SRC_ADDR;
 				break;
 			case INETADDR_ERR_IFADDR:
 				log_debug_low("%s() return "
@@ -1049,10 +1049,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			switch (aip_ptoh_err) {
 			case INETADDR_ERR_ADDR:
 				log_debug_low("%s() return "
-					"VPOV_ERR_SRC_GRP_ADDR\n",
+					"VPOV_ERR_SRC_ADDR\n",
 					__func__);
 				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_SRC_GRP_ADDR;
+				return VPOV_ERR_SRC_ADDR;
 				break;
 			case INETADDR_ERR_PORT:
 				log_debug_low("%s() return "
@@ -1089,10 +1089,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		log_debug_low("%s() first ap_pton_inet_csv() call = %d\n",
 			__func__, ret);
 		if (ret == -1) {
-			log_debug_low("%s() return VPOV_ERR_INET_DST_GRP\n",
+			log_debug_low("%s() return VPOV_ERR_INET_DST_ADDR\n",
 					__func__);
 			log_debug_med("%s() exit\n", __func__);
-			return VPOV_ERR_INET_DST_GRP;
+			return VPOV_ERR_INET_DST_ADDR;
 		} else {
 			prog_parms->inet_tx_sock_parms.mc_dests =
 				(struct sockaddr_in *)
@@ -1158,10 +1158,10 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		log_debug_low("%s() first ap_pton_inet6_csv() call = %d\n",
 			__func__, ret);
 		if (ret == -1) {
-			log_debug_low("%s() return VPOV_ERR_INET6_DST_GRP\n",
+			log_debug_low("%s() return VPOV_ERR_INET6_DST_ADDR\n",
 					__func__);
 			log_debug_med("%s() exit\n", __func__);
-			return VPOV_ERR_INET6_DST_GRP;
+			return VPOV_ERR_INET6_DST_ADDR;
 		} else {
 			prog_parms->inet6_tx_sock_parms.mc_dests =
 				(struct sockaddr_in6 *)
@@ -1234,7 +1234,7 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 	vpov = validate_prog_opts_vals(prog_opts, prog_parms,
 						err_str_parm, err_str_size);
 	switch (vpov) {
-	case VPOV_ERR_SRC_GRP_ADDR:
+	case VPOV_ERR_SRC_ADDR:
 		log_opt_error(OE_SRC_GRP_ADDR, NULL);
 		break;
 	case VPOV_ERR_IF_ADDR:
@@ -1246,8 +1246,8 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 	case VPOV_ERR_DST_PORT:
 		log_opt_error(OE_DST_PORT, NULL);
 		break;
-	case VPOV_ERR_INET_DST_GRP:
-		log_opt_error(OE_INET_DST_GRPS, NULL);
+	case VPOV_ERR_INET_DST_ADDR:
+		log_opt_error(OE_INET_DST_ADDR, NULL);
 		break;
 	case VPOV_ERR_INET_TX_TTL_RANGE:
 		log_opt_error(OE_INET_TX_TTL_RANGE, NULL);
@@ -1258,8 +1258,8 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 	case VPOV_ERR_INET6_OUT_INTF:
 		log_opt_error(OE_INET6_OUT_INTF, NULL);
 		break;
-	case VPOV_ERR_INET6_DST_GRP:
-		log_opt_error(OE_INET6_DST_GRPS, NULL);
+	case VPOV_ERR_INET6_DST_ADDR:
+		log_opt_error(OE_INET6_DST_ADDR, NULL);
 		break;
 	case VPOV_ERR_INET6_TX_HOPS_RANGE:
 		log_opt_error(OE_INET6_TX_HOPS_RANGE, NULL);
@@ -1486,18 +1486,18 @@ void log_opt_error(enum OPT_ERR option_err,
 	case OE_UNKNOWN_OPT:
 		log_msg(LOG_SEV_ERR, "Unknown option.\n");
 		break;
-	case OE_NO_SRC_GRP:
-		log_msg(LOG_SEV_ERR, "No multicast source group specified.\n");
+	case OE_NO_SRC_ADDR:
+		log_msg(LOG_SEV_ERR, "No source address specified.\n");
 		break;
-	case OE_MULTI_SRC_GRPS:
-		log_msg(LOG_SEV_ERR, "Too many multicast source groups.\n");
+	case OE_MULTI_SRC_ADDRS:
+		log_msg(LOG_SEV_ERR, "Too many source addresses.\n");
 		break;
-	case OE_NO_DST_GRPS:
-		log_msg(LOG_SEV_ERR, "No multicast destination group(s) ");
+	case OE_NO_DST_ADDRS:
+		log_msg(LOG_SEV_ERR, "No destination address(es) ");
 		log_msg(LOG_SEV_ERR, "specified.\n");
 		break;
 	case OE_SRC_GRP_ADDR:
-		log_msg(LOG_SEV_ERR, "Invalid multicast source group.\n");
+		log_msg(LOG_SEV_ERR, "Invalid source address.\n");
 		break;	
 	case OE_IF_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid interface address.\n");
@@ -1508,8 +1508,8 @@ void log_opt_error(enum OPT_ERR option_err,
 	case OE_DST_PORT:
 		log_msg(LOG_SEV_ERR, "Invalid destination port.\n");
 		break;
-	case OE_INET_DST_GRPS:
-		log_msg(LOG_SEV_ERR, "Invalid IPv4 destination group.\n");
+	case OE_INET_DST_ADDR:
+		log_msg(LOG_SEV_ERR, "Invalid IPv4 destination address.\n");
 		break;
 	case OE_INET_TX_TTL_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid IPv4 transmit time-to-live.\n");
@@ -1520,8 +1520,8 @@ void log_opt_error(enum OPT_ERR option_err,
 	case OE_INET6_OUT_INTF:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 output interface.\n");
 		break;
-	case OE_INET6_DST_GRPS:
-		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination group.\n");
+	case OE_INET6_DST_ADDR:
+		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination address.\n");
 		break;
 	case OE_INET6_TX_HOPS_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 transmit hop-count.\n");
