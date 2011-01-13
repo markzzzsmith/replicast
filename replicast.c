@@ -1153,20 +1153,31 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 
 		ret = ap_pton_inet6_csv(
 				prog_opts->inet6_tx_mc_sock_mc_dests_str,
-				&prog_parms->inet6_tx_sock_parms.mc_dests,
-				0,
-				1,
-				err_str_parm,
+				NULL, 0, 0, 0, &aip_ptoh_err, err_str_parm, 
 				err_str_size);
+		log_debug_low("%s() first ap_pton_inet6_csv() call = %d\n",
+			__func__, ret);
 		if (ret == -1) {
 			log_debug_low("%s() return VPOV_ERR_INET6_DST_GRP\n",
 					__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPOV_ERR_INET6_DST_GRP;
 		} else {
+			prog_parms->inet6_tx_sock_parms.mc_dests =
+				(struct sockaddr_in6 *)
+				malloc((ret + 1) * sizeof(struct sockaddr_in6));
+			if (prog_parms->inet6_tx_sock_parms.mc_dests == NULL) {
+				log_debug_low("%s() return", __func__);
+				log_debug_low(" VPOV_ERR_MEMORY\n");
+				log_debug_med("%s() exit\n", __func__);
+				return VPOV_ERR_MEMORY;
+			}
+			ret = ap_pton_inet6_csv(
+				prog_opts->inet6_tx_mc_sock_mc_dests_str,
+				prog_parms->inet6_tx_sock_parms.mc_dests,
+				0, 1, 1, NULL, NULL, 0);
 			prog_parms->inet6_tx_sock_parms.mc_dests_num = ret;
 		}
-
 
 		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
 			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);

@@ -1,6 +1,6 @@
 #include "string.h"
 
-#include "stringnz.h"
+#include "stringz.h"
 
 
 char *strnzcpy(char *dest, const char *src, const size_t n)

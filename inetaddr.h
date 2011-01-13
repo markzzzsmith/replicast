@@ -76,12 +76,15 @@ void ap_htop_inet6(const struct in6_addr *addr,
                    char *ap_str,
                    const unsigned int ap_str_size);
 
-int ap_pton_inet6_csv(const char *ap_inet6_csv_str,
-		      struct sockaddr_in6 **ap_sa6_list,
-		      const int max_sa6_list_len,
-		      const unsigned int sentinel,
+int ap_pton_inet6_csv(const char *ap_csv_str,
+		      struct sockaddr_in6 *sa_list,
+		      const int max_sa_list_entries,
+		      const unsigned char ignore_errors,
+		      const unsigned char sentinel,
+		      enum inetaddr_errors *ap_err,
 		      char *ap_err_str,
 		      const unsigned int ap_err_str_size);
+
 
 int inet_if_addr(const char *str,
 		 struct in_addr *if_addr);
