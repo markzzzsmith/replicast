@@ -154,13 +154,13 @@ struct program_options {
 	unsigned int inet6_rx_sock_mcgroup_set;
 	char *inet6_rx_sock_mcgroup_str;
 
-	unsigned int inet6_tx_mc_sock_mc_hops_set;
-	char *inet6_tx_mc_sock_mc_hops_str;
-	unsigned int inet6_tx_mc_sock_mc_loop_set;
-	unsigned int inet6_tx_mc_sock_out_intf_set;
-	char *inet6_tx_mc_sock_out_intf_str;
-	unsigned int inet6_tx_mc_sock_mc_dests_set;
-	char *inet6_tx_mc_sock_mc_dests_str;
+	unsigned int inet6_tx_sock_mc_hops_set;
+	char *inet6_tx_sock_mc_hops_str;
+	unsigned int inet6_tx_sock_mc_loop_set;
+	unsigned int inet6_tx_sock_out_intf_set;
+	char *inet6_tx_sock_out_intf_str;
+	unsigned int inet6_tx_sock_mc_dests_set;
+	char *inet6_tx_sock_mc_dests_str;
 };
 
 
@@ -691,13 +691,13 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet6_rx_sock_mcgroup_set = 0;
 	prog_opts->inet6_rx_sock_mcgroup_str = NULL;
 
-	prog_opts->inet6_tx_mc_sock_mc_hops_set = 0;
-	prog_opts->inet6_tx_mc_sock_mc_hops_str = NULL;
-	prog_opts->inet6_tx_mc_sock_mc_loop_set = 0;
-	prog_opts->inet6_tx_mc_sock_out_intf_set = 0;
-	prog_opts->inet6_tx_mc_sock_out_intf_str = NULL;
-	prog_opts->inet6_tx_mc_sock_mc_dests_set = 0;
-	prog_opts->inet6_tx_mc_sock_mc_dests_str = NULL;
+	prog_opts->inet6_tx_sock_mc_hops_set = 0;
+	prog_opts->inet6_tx_sock_mc_hops_str = NULL;
+	prog_opts->inet6_tx_sock_mc_loop_set = 0;
+	prog_opts->inet6_tx_sock_out_intf_set = 0;
+	prog_opts->inet6_tx_sock_out_intf_str = NULL;
+	prog_opts->inet6_tx_sock_mc_dests_set = 0;
+	prog_opts->inet6_tx_sock_mc_dests_str = NULL;
 	
 	log_debug_med("%s() exit\n", __func__);
 
@@ -832,25 +832,25 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		case CMDLINE_OPT_6HOPS:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_6HOPS\n", __func__);
-			prog_opts->inet6_tx_mc_sock_mc_hops_set = 1;
-			prog_opts->inet6_tx_mc_sock_mc_hops_str = optarg;
+			prog_opts->inet6_tx_sock_mc_hops_set = 1;
+			prog_opts->inet6_tx_sock_mc_hops_str = optarg;
 			break;
 		case CMDLINE_OPT_6LOOP:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_6LOOP\n", __func__);
-			prog_opts->inet6_tx_mc_sock_mc_loop_set = 1;
+			prog_opts->inet6_tx_sock_mc_loop_set = 1;
 			break;
 		case CMDLINE_OPT_6OUTIF:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_6OUTIF\n", __func__);
-			prog_opts->inet6_tx_mc_sock_out_intf_set = 1;
-			prog_opts->inet6_tx_mc_sock_out_intf_str = optarg;
+			prog_opts->inet6_tx_sock_out_intf_set = 1;
+			prog_opts->inet6_tx_sock_out_intf_str = optarg;
 			break;
 		case CMDLINE_OPT_6DSTS:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_6DSTS\n", __func__);
-			prog_opts->inet6_tx_mc_sock_mc_dests_set = 1;
-			prog_opts->inet6_tx_mc_sock_mc_dests_str = optarg;
+			prog_opts->inet6_tx_sock_mc_dests_set = 1;
+			prog_opts->inet6_tx_sock_mc_dests_str = optarg;
 			break;
 		case ':':
 			log_debug_low("%s: getopt_long_only() = missing "
@@ -909,7 +909,7 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 
 
 	if (!prog_opts->inet_tx_sock_mc_dests_set &&
-				!prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+				!prog_opts->inet6_tx_sock_mc_dests_set) {
 		log_debug_low("%s() return VPO_ERR_NO_DST_GRPS\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_NO_DST_GRPS;
@@ -917,7 +917,7 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
 		if (prog_opts->inet_tx_sock_mc_dests_set &&
-                                prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+                                prog_opts->inet6_tx_sock_mc_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INETINETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -927,7 +927,7 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINET;	
-		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+		} else if (prog_opts->inet6_tx_sock_mc_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -937,7 +937,7 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 
 	if (prog_opts->inet6_rx_sock_mcgroup_set) {
 		if (prog_opts->inet_tx_sock_mc_dests_set &&
-                                prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+                                prog_opts->inet6_tx_sock_mc_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INET6INETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -947,7 +947,7 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INET;	
-		} else if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+		} else if (prog_opts->inet6_tx_sock_mc_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INET6INET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -1147,12 +1147,12 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		}
 	}
 
-	if (prog_opts->inet6_tx_mc_sock_mc_dests_set) {
+	if (prog_opts->inet6_tx_sock_mc_dests_set) {
 		log_debug_low("%s() prog_opts->inet6_tx_sock_mc_dests_set\n",
 								__func__);
 
 		ret = ap_pton_inet6_csv(
-				prog_opts->inet6_tx_mc_sock_mc_dests_str,
+				prog_opts->inet6_tx_sock_mc_dests_str,
 				NULL, 0, 0, 0, &aip_ptoh_err, err_str_parm, 
 				err_str_size);
 		log_debug_low("%s() first ap_pton_inet6_csv() call = %d\n",
@@ -1173,14 +1173,14 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				return VPOV_ERR_MEMORY;
 			}
 			ret = ap_pton_inet6_csv(
-				prog_opts->inet6_tx_mc_sock_mc_dests_str,
+				prog_opts->inet6_tx_sock_mc_dests_str,
 				prog_parms->inet6_tx_sock_parms.mc_dests,
 				0, 1, 1, NULL, NULL, 0);
 			prog_parms->inet6_tx_sock_parms.mc_dests_num = ret;
 		}
 
-		if (prog_opts->inet6_tx_mc_sock_mc_hops_set) {
-			tx_hops = atoi(prog_opts->inet6_tx_mc_sock_mc_hops_str);
+		if (prog_opts->inet6_tx_sock_mc_hops_set) {
+			tx_hops = atoi(prog_opts->inet6_tx_sock_mc_hops_str);
 			if ((tx_hops < 0) || (tx_hops > 255)) {
 				log_debug_low("%s() return "
 					"VPOV_ERR_INET6_TX_HOPS_RANGE\n",
@@ -1193,15 +1193,15 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			}
 		}
 
-		if (prog_opts->inet6_tx_mc_sock_mc_loop_set) {
+		if (prog_opts->inet6_tx_sock_mc_loop_set) {
 			log_debug_low("%s() prog_opts->", __func__);
-			log_debug_low("inet6_tx_mc_sock_mc_loop_set\n");
+			log_debug_low("inet6_tx_sock_mc_loop_set\n");
 			prog_parms->inet6_tx_sock_parms.mc_loop = 1;
 		}
 
-		if (prog_opts->inet6_tx_mc_sock_out_intf_set) {
+		if (prog_opts->inet6_tx_sock_out_intf_set) {
 			out_intf_idx = if_nametoindex(prog_opts->
-						inet6_tx_mc_sock_out_intf_str);
+						inet6_tx_sock_out_intf_str);
 			if (out_intf_idx == 0) {
 				log_debug_low("%s() return "
 					"VPOV_ERR_INET6_OUT_INTF\n",
