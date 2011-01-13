@@ -1497,7 +1497,7 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "specified.\n");
 		break;
 	case OE_SRC_GRP_ADDR:
-		log_msg(LOG_SEV_ERR, "Invalid source address.\n");
+		log_msg(LOG_SEV_ERR, "Invalid traffic source.\n");
 		break;	
 	case OE_IF_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid interface address.\n");
