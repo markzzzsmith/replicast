@@ -312,9 +312,7 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms);
 
 void close_inet6_rx_sock(const int sock_fd);
 
-int open_inet_tx_sock(const unsigned int mc_ttl,
-			 const unsigned int mc_loop,
-			 const struct in_addr out_intf_addr);
+int open_inet_tx_sock(const struct inet_tx_sock_params *sock_parms);
 
 void close_inet_tx_sock(int sock_fd);
 
@@ -1589,8 +1587,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_sock(tx_sock_parms.mc_ttl,
-		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
+	*inet_out_sock_fd = open_inet_tx_sock(&tx_sock_parms);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1677,8 +1674,7 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_sock(inet_tx_sock_parms.mc_ttl,
-		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
+	*inet_out_sock_fd = open_inet_tx_sock(&inet_tx_sock_parms);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1770,8 +1766,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_sock(tx_sock_parms.mc_ttl,
-		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
+	*inet_out_sock_fd = open_inet_tx_sock(&tx_sock_parms);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1813,8 +1808,7 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_sock(inet_tx_sock_parms.mc_ttl,
-		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
+	*inet_out_sock_fd = open_inet_tx_sock(&inet_tx_sock_parms);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -2297,9 +2291,7 @@ void close_inet6_rx_sock(const int sock_fd)
 }
 
 
-int open_inet_tx_sock(const unsigned int mc_ttl,
-			 const unsigned int mc_loop,
-			 const struct in_addr out_intf_addr)
+int open_inet_tx_sock(const struct inet_tx_sock_params *sock_parms)
 {
 	int sock_fd;
 	uint8_t ttl;
@@ -2314,8 +2306,8 @@ int open_inet_tx_sock(const unsigned int mc_ttl,
 		return -1;
 	}
 
-	if (mc_ttl > 0) {
-		ttl = mc_ttl & 0xff;
+	if (sock_parms->mc_ttl > 0) {
+		ttl = sock_parms->mc_ttl & 0xff;
 		ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_TTL,
 			&ttl, sizeof(ttl));	
 		if (ret == -1) {
@@ -2323,7 +2315,7 @@ int open_inet_tx_sock(const unsigned int mc_ttl,
 		}
 	}
 
-	if (mc_loop == 1) {
+	if (sock_parms->mc_loop == 1) {
 		loop = 1;
 	} else {
 		loop = 0;
@@ -2334,8 +2326,8 @@ int open_inet_tx_sock(const unsigned int mc_ttl,
 		return -1;
 	}
 
-	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_IF, &out_intf_addr,
-		sizeof(out_intf_addr));
+	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_IF,
+		&sock_parms->out_intf_addr, sizeof(sock_parms->out_intf_addr));
 	if (ret == -1) {
 		return -1;
 	}
