@@ -101,8 +101,8 @@ struct inet_tx_mc_sock_params {
 	unsigned int mc_ttl;
 	unsigned int mc_loop;
 	struct in_addr out_intf_addr;
-	struct sockaddr_in *mc_dests;
-	unsigned int mc_dests_num;	
+	struct sockaddr_in *dests;
+	unsigned int dests_num;	
 };
 
 struct inet6_rx_mc_sock_params {
@@ -115,8 +115,8 @@ struct inet6_tx_mc_sock_params {
 	int mc_hops;
 	unsigned int mc_loop;
 	unsigned int out_intf_idx;
-	struct sockaddr_in6 *mc_dests;
-	unsigned int mc_dests_num;
+	struct sockaddr_in6 *dests;
+	unsigned int dests_num;
 };
 
 struct socket_fds {
@@ -148,8 +148,8 @@ struct program_options {
 	unsigned int inet_tx_sock_mc_loop_set;
 	unsigned int inet_tx_sock_out_intf_set;
 	char *inet_tx_sock_out_intf_str;
-	unsigned int inet_tx_sock_mc_dests_set;
-	char *inet_tx_sock_mc_dests_str;
+	unsigned int inet_tx_sock_dests_set;
+	char *inet_tx_sock_dests_str;
 
 	unsigned int inet6_rx_sock_mcgroup_set;
 	char *inet6_rx_sock_mcgroup_str;
@@ -159,8 +159,8 @@ struct program_options {
 	unsigned int inet6_tx_sock_mc_loop_set;
 	unsigned int inet6_tx_sock_out_intf_set;
 	char *inet6_tx_sock_out_intf_str;
-	unsigned int inet6_tx_sock_mc_dests_set;
-	char *inet6_tx_sock_mc_dests_str;
+	unsigned int inet6_tx_sock_dests_set;
+	char *inet6_tx_sock_dests_str;
 };
 
 
@@ -331,12 +331,12 @@ void close_inet6_tx_mc_sock(int sock_fd);
 int inet_tx_mcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
- 		  const struct sockaddr_in inet_mc_dests[]);
+ 		  const struct sockaddr_in inet_dests[]);
 
 int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct sockaddr_in6 inet6_mc_dests[]);
+ 		   const struct sockaddr_in6 inet6_dests[]);
 
 void close_sockets(const struct socket_fds *sock_fds);
 
@@ -685,8 +685,8 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet_tx_sock_mc_loop_set = 0;
 	prog_opts->inet_tx_sock_out_intf_set = 0;
 	prog_opts->inet_tx_sock_out_intf_str = NULL;
-	prog_opts->inet_tx_sock_mc_dests_set = 0;
-	prog_opts->inet_tx_sock_mc_dests_str = NULL;
+	prog_opts->inet_tx_sock_dests_set = 0;
+	prog_opts->inet_tx_sock_dests_str = NULL;
 
 	prog_opts->inet6_rx_sock_mcgroup_set = 0;
 	prog_opts->inet6_rx_sock_mcgroup_str = NULL;
@@ -696,8 +696,8 @@ void init_prog_opts(struct program_options *prog_opts)
 	prog_opts->inet6_tx_sock_mc_loop_set = 0;
 	prog_opts->inet6_tx_sock_out_intf_set = 0;
 	prog_opts->inet6_tx_sock_out_intf_str = NULL;
-	prog_opts->inet6_tx_sock_mc_dests_set = 0;
-	prog_opts->inet6_tx_sock_mc_dests_str = NULL;
+	prog_opts->inet6_tx_sock_dests_set = 0;
+	prog_opts->inet6_tx_sock_dests_str = NULL;
 	
 	log_debug_med("%s() exit\n", __func__);
 
@@ -721,8 +721,8 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
 	prog_parms->inet_tx_sock_parms.mc_loop = 0;
 	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = ntohl(INADDR_ANY);
-	prog_parms->inet_tx_sock_parms.mc_dests = NULL;
-	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
+	prog_parms->inet_tx_sock_parms.dests = NULL;
+	prog_parms->inet_tx_sock_parms.dests_num = 0;
 
 	memcpy(&prog_parms->inet6_rx_sock_parms.mc_group, &in6addr_any,
 		sizeof(in6addr_any));
@@ -732,8 +732,8 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet6_tx_sock_parms.mc_hops = 1;
 	prog_parms->inet6_tx_sock_parms.mc_loop = 0;
 	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
-	prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
-	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
+	prog_parms->inet6_tx_sock_parms.dests = NULL;
+	prog_parms->inet6_tx_sock_parms.dests_num = 0;
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -820,8 +820,8 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		case CMDLINE_OPT_4DSTS:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_4DSTS\n", __func__);
-			prog_opts->inet_tx_sock_mc_dests_set = 1;
-			prog_opts->inet_tx_sock_mc_dests_str = optarg;
+			prog_opts->inet_tx_sock_dests_set = 1;
+			prog_opts->inet_tx_sock_dests_str = optarg;
 			break;
 		case CMDLINE_OPT_6SRC:
 			log_debug_low("%s: getopt_long_only() = "
@@ -849,8 +849,8 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		case CMDLINE_OPT_6DSTS:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_6DSTS\n", __func__);
-			prog_opts->inet6_tx_sock_mc_dests_set = 1;
-			prog_opts->inet6_tx_sock_mc_dests_str = optarg;
+			prog_opts->inet6_tx_sock_dests_set = 1;
+			prog_opts->inet6_tx_sock_dests_str = optarg;
 			break;
 		case ':':
 			log_debug_low("%s: getopt_long_only() = missing "
@@ -908,26 +908,26 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 	}
 
 
-	if (!prog_opts->inet_tx_sock_mc_dests_set &&
-				!prog_opts->inet6_tx_sock_mc_dests_set) {
+	if (!prog_opts->inet_tx_sock_dests_set &&
+				!prog_opts->inet6_tx_sock_dests_set) {
 		log_debug_low("%s() return VPO_ERR_NO_DST_ADDRS\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
 		return VPO_ERR_NO_DST_ADDRS;
 	}
 
 	if (prog_opts->inet_rx_sock_mcgroup_set) {
-		if (prog_opts->inet_tx_sock_mc_dests_set &&
-                                prog_opts->inet6_tx_sock_mc_dests_set) {
+		if (prog_opts->inet_tx_sock_dests_set &&
+                                prog_opts->inet6_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INETINETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINETINET6;
-		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+		} else if (prog_opts->inet_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INETINET\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INETINET;	
-		} else if (prog_opts->inet6_tx_sock_mc_dests_set) {
+		} else if (prog_opts->inet6_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -936,18 +936,18 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 	}
 
 	if (prog_opts->inet6_rx_sock_mcgroup_set) {
-		if (prog_opts->inet_tx_sock_mc_dests_set &&
-                                prog_opts->inet6_tx_sock_mc_dests_set) {
+		if (prog_opts->inet_tx_sock_dests_set &&
+                                prog_opts->inet6_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INET6INETINET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INETINET6;
-		} else if (prog_opts->inet_tx_sock_mc_dests_set) {
+		} else if (prog_opts->inet_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INET6INET\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
 			return VPO_MODE_INET6INET;	
-		} else if (prog_opts->inet6_tx_sock_mc_dests_set) {
+		} else if (prog_opts->inet6_tx_sock_dests_set) {
 			log_debug_low("%s() return VPO_MODE_INET6INET6\n",
 				__func__);
 			log_debug_med("%s() exit\n", __func__);
@@ -1079,11 +1079,11 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		}
 	}
 
-	if (prog_opts->inet_tx_sock_mc_dests_set) {
-		log_debug_low("%s() prog_opts->inet_tx_sock_mc_dests_set\n",
+	if (prog_opts->inet_tx_sock_dests_set) {
+		log_debug_low("%s() prog_opts->inet_tx_sock_dests_set\n",
 								__func__);
 		ret = ap_pton_inet_csv(
-				prog_opts->inet_tx_sock_mc_dests_str,
+				prog_opts->inet_tx_sock_dests_str,
 				NULL, 0, 0, 0, &aip_ptoh_err, err_str_parm, 
 				err_str_size);
 		log_debug_low("%s() first ap_pton_inet_csv() call = %d\n",
@@ -1094,20 +1094,20 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			log_debug_med("%s() exit\n", __func__);
 			return VPOV_ERR_INET_DST_ADDR;
 		} else {
-			prog_parms->inet_tx_sock_parms.mc_dests =
+			prog_parms->inet_tx_sock_parms.dests =
 				(struct sockaddr_in *)
 				malloc((ret + 1) * sizeof(struct sockaddr_in));
-			if (prog_parms->inet_tx_sock_parms.mc_dests == NULL) {
+			if (prog_parms->inet_tx_sock_parms.dests == NULL) {
 				log_debug_low("%s() return", __func__);
 				log_debug_low(" VPOV_ERR_MEMORY\n");
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_MEMORY;
 			}
 			ret = ap_pton_inet_csv(
-				prog_opts->inet_tx_sock_mc_dests_str,
-				prog_parms->inet_tx_sock_parms.mc_dests,
+				prog_opts->inet_tx_sock_dests_str,
+				prog_parms->inet_tx_sock_parms.dests,
 				0, 1, 1, NULL, NULL, 0);
-			prog_parms->inet_tx_sock_parms.mc_dests_num = ret;
+			prog_parms->inet_tx_sock_parms.dests_num = ret;
 		}
 
 		if (prog_opts->inet_tx_sock_mc_ttl_set) {
@@ -1147,12 +1147,12 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		}
 	}
 
-	if (prog_opts->inet6_tx_sock_mc_dests_set) {
-		log_debug_low("%s() prog_opts->inet6_tx_sock_mc_dests_set\n",
+	if (prog_opts->inet6_tx_sock_dests_set) {
+		log_debug_low("%s() prog_opts->inet6_tx_sock_dests_set\n",
 								__func__);
 
 		ret = ap_pton_inet6_csv(
-				prog_opts->inet6_tx_sock_mc_dests_str,
+				prog_opts->inet6_tx_sock_dests_str,
 				NULL, 0, 0, 0, &aip_ptoh_err, err_str_parm, 
 				err_str_size);
 		log_debug_low("%s() first ap_pton_inet6_csv() call = %d\n",
@@ -1163,20 +1163,20 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 			log_debug_med("%s() exit\n", __func__);
 			return VPOV_ERR_INET6_DST_ADDR;
 		} else {
-			prog_parms->inet6_tx_sock_parms.mc_dests =
+			prog_parms->inet6_tx_sock_parms.dests =
 				(struct sockaddr_in6 *)
 				malloc((ret + 1) * sizeof(struct sockaddr_in6));
-			if (prog_parms->inet6_tx_sock_parms.mc_dests == NULL) {
+			if (prog_parms->inet6_tx_sock_parms.dests == NULL) {
 				log_debug_low("%s() return", __func__);
 				log_debug_low(" VPOV_ERR_MEMORY\n");
 				log_debug_med("%s() exit\n", __func__);
 				return VPOV_ERR_MEMORY;
 			}
 			ret = ap_pton_inet6_csv(
-				prog_opts->inet6_tx_sock_mc_dests_str,
-				prog_parms->inet6_tx_sock_parms.mc_dests,
+				prog_opts->inet6_tx_sock_dests_str,
+				prog_parms->inet6_tx_sock_parms.dests,
 				0, 1, 1, NULL, NULL, 0);
-			prog_parms->inet6_tx_sock_parms.mc_dests_num = ret;
+			prog_parms->inet6_tx_sock_parms.dests_num = ret;
 		}
 
 		if (prog_opts->inet6_tx_sock_mc_hops_set) {
@@ -1383,7 +1383,7 @@ void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 {
 	const unsigned int ap_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
 	char ap_str[ap_str_size];
-	unsigned int mc_dest_num = 0;
+	unsigned int dest_num = 0;
 	char out_intf_addr_str[INET_ADDRSTRLEN];
 
 
@@ -1391,17 +1391,17 @@ void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 
 	log_msg(LOG_SEV_INFO, "inet tx dsts: ");
 
-	for (mc_dest_num = 0; mc_dest_num < (inet_tx_parms->mc_dests_num - 1);
-								mc_dest_num++) {
+	for (dest_num = 0; dest_num < (inet_tx_parms->dests_num - 1);
+								dest_num++) {
 
-		ap_htop_inet(&inet_tx_parms->mc_dests[mc_dest_num].sin_addr,
-			ntohs(inet_tx_parms->mc_dests[mc_dest_num].sin_port),
+		ap_htop_inet(&inet_tx_parms->dests[dest_num].sin_addr,
+			ntohs(inet_tx_parms->dests[dest_num].sin_port),
 			ap_str, ap_str_size);
 		log_msg(LOG_SEV_INFO, "%s,", ap_str);
 	}
 
-	ap_htop_inet(&inet_tx_parms->mc_dests[mc_dest_num].sin_addr,
-		ntohs(inet_tx_parms->mc_dests[mc_dest_num].sin_port),
+	ap_htop_inet(&inet_tx_parms->dests[dest_num].sin_addr,
+		ntohs(inet_tx_parms->dests[dest_num].sin_port),
 		ap_str, ap_str_size);
 	log_msg(LOG_SEV_INFO, "%s\n", ap_str);
 
@@ -1431,7 +1431,7 @@ void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
 {
 	const unsigned int ap_str_size = 1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1;
 	char ap_str[ap_str_size];
-	unsigned int mc_dest_num = 0;
+	unsigned int dest_num = 0;
 	char out_intf_name[IFNAMSIZ];
 
 
@@ -1439,17 +1439,17 @@ void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
 
 	log_msg(LOG_SEV_INFO, "inet6 tx dsts: ");
 
-	for (mc_dest_num = 0; mc_dest_num < (inet6_tx_parms->mc_dests_num - 1);
-								mc_dest_num++) {
+	for (dest_num = 0; dest_num < (inet6_tx_parms->dests_num - 1);
+								dest_num++) {
 
-		ap_htop_inet6(&inet6_tx_parms->mc_dests[mc_dest_num].sin6_addr,
-			ntohs(inet6_tx_parms->mc_dests[mc_dest_num].sin6_port),
+		ap_htop_inet6(&inet6_tx_parms->dests[dest_num].sin6_addr,
+			ntohs(inet6_tx_parms->dests[dest_num].sin6_port),
 			ap_str, ap_str_size);
 		log_msg(LOG_SEV_INFO, "%s,", ap_str);
 	}
 
-	ap_htop_inet6(&inet6_tx_parms->mc_dests[mc_dest_num].sin6_addr,
-		ntohs(inet6_tx_parms->mc_dests[mc_dest_num].sin6_port),
+	ap_htop_inet6(&inet6_tx_parms->dests[dest_num].sin6_addr,
+		ntohs(inet6_tx_parms->dests[dest_num].sin6_port),
 		ap_str, ap_str_size);
 	log_msg(LOG_SEV_INFO, "%s\n", ap_str);
 
@@ -1549,14 +1549,14 @@ void cleanup_prog_parms(struct program_parameters *prog_parms)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	if (prog_parms->inet_tx_sock_parms.mc_dests != NULL) {
-		free(prog_parms->inet_tx_sock_parms.mc_dests);
-		prog_parms->inet_tx_sock_parms.mc_dests = NULL;
+	if (prog_parms->inet_tx_sock_parms.dests != NULL) {
+		free(prog_parms->inet_tx_sock_parms.dests);
+		prog_parms->inet_tx_sock_parms.dests = NULL;
 	}
 
-	if (prog_parms->inet6_tx_sock_parms.mc_dests != NULL) {
-		free(prog_parms->inet6_tx_sock_parms.mc_dests);
-		prog_parms->inet6_tx_sock_parms.mc_dests = NULL;
+	if (prog_parms->inet6_tx_sock_parms.dests != NULL) {
+		free(prog_parms->inet6_tx_sock_parms.dests);
+		prog_parms->inet6_tx_sock_parms.dests = NULL;
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -1608,7 +1608,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests);
+				tx_sock_parms.dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
@@ -1651,7 +1651,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests);
+				tx_sock_parms.dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
@@ -1704,10 +1704,10 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
 			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms.mc_dests);
+				inet_tx_sock_parms.dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
 			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet6_tx_sock_parms.mc_dests);
+				inet6_tx_sock_parms.dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
 	}
@@ -1750,7 +1750,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests);
+				tx_sock_parms.dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
@@ -1793,7 +1793,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms.mc_dests);
+				tx_sock_parms.dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
@@ -1843,10 +1843,10 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
 			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms.mc_dests);
+				inet_tx_sock_parms.dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
 			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet6_tx_sock_parms.mc_dests);
+				inet6_tx_sock_parms.dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
 	}
@@ -2448,20 +2448,20 @@ void close_inet6_tx_mc_sock(int sock_fd)
 int inet_tx_mcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
- 		  const struct sockaddr_in inet_mc_dests[])
+ 		  const struct sockaddr_in inet_dests[])
 {
-	const struct sockaddr_in *sa_mc_dest;
+	const struct sockaddr_in *sa_dest;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	sa_mc_dest = inet_mc_dests;
+	sa_dest = inet_dests;
 
-	while (sa_mc_dest->sin_family == AF_INET) {
+	while (sa_dest->sin_family == AF_INET) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0,
-			(struct sockaddr *)sa_mc_dest,
+			(struct sockaddr *)sa_dest,
 			sizeof(struct sockaddr_in));
 		if (ret != -1) {
 			tx_success++;
@@ -2469,7 +2469,7 @@ int inet_tx_mcast(const int sock_fd,
 		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
 
-		sa_mc_dest++;
+		sa_dest++;
 	}
 
 	log_debug_med("%s() exit\n", __func__);
@@ -2482,20 +2482,20 @@ int inet_tx_mcast(const int sock_fd,
 int inet6_tx_mcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
- 		   const struct sockaddr_in6 inet6_mc_dests[])
+ 		   const struct sockaddr_in6 inet6_dests[])
 {
-	const struct sockaddr_in6 *sa6_mc_dest;
+	const struct sockaddr_in6 *sa6_dest;
 	unsigned int tx_success = 0;
 	ssize_t ret;
 
 
 	log_debug_med("%s() entry\n", __func__);
 
-	sa6_mc_dest = inet6_mc_dests;
+	sa6_dest = inet6_dests;
 
-	while (sa6_mc_dest->sin6_family == AF_INET6) {
+	while (sa6_dest->sin6_family == AF_INET6) {
 		ret = sendto(sock_fd, pkt, pkt_len, 0, 	
-			(struct sockaddr *)sa6_mc_dest,
+			(struct sockaddr *)sa6_dest,
 			sizeof(struct sockaddr_in6));
 		if (ret != -1) {
 			tx_success++;
@@ -2503,7 +2503,7 @@ int inet6_tx_mcast(const int sock_fd,
 		log_debug_low("%s(): sendto() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
 
-		sa6_mc_dest++;
+		sa6_dest++;
 	}
 	
 	log_debug_med("%s() exit\n", __func__);
