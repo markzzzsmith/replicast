@@ -91,13 +91,13 @@ enum REPLICAST_MODE {
 
 
 
-struct inet_rx_mc_sock_params {
+struct inet_rx_sock_params {
 	struct in_addr mc_group;
 	unsigned int port;
 	struct in_addr in_intf_addr;	
 };
 
-struct inet_tx_mc_sock_params {
+struct inet_tx_sock_params {
 	unsigned int mc_ttl;
 	unsigned int mc_loop;
 	struct in_addr out_intf_addr;
@@ -105,13 +105,13 @@ struct inet_tx_mc_sock_params {
 	unsigned int dests_num;	
 };
 
-struct inet6_rx_mc_sock_params {
+struct inet6_rx_sock_params {
 	struct in6_addr mc_group;
 	unsigned int port;
 	unsigned int in_intf_idx;
 };
 
-struct inet6_tx_mc_sock_params {
+struct inet6_tx_sock_params {
 	int mc_hops;
 	unsigned int mc_loop;
 	unsigned int out_intf_idx;
@@ -167,10 +167,10 @@ struct program_options {
 struct program_parameters {
 	enum REPLICAST_MODE rc_mode;
 	unsigned int become_daemon;
-	struct inet_rx_mc_sock_params inet_rx_sock_parms;
-	struct inet_tx_mc_sock_params inet_tx_sock_parms;
-	struct inet6_rx_mc_sock_params inet6_rx_sock_parms;
-	struct inet6_tx_mc_sock_params inet6_tx_sock_parms;
+	struct inet_rx_sock_params inet_rx_sock_parms;
+	struct inet_tx_sock_params inet_tx_sock_parms;
+	struct inet6_rx_sock_params inet6_rx_sock_parms;
+	struct inet6_tx_sock_params inet6_tx_sock_parms;
 };
 
 
@@ -206,16 +206,16 @@ void log_prog_banner(void);
 
 void log_prog_parms(const struct program_parameters *prog_parms);
 
-void log_inet_rx_sock_parms(const struct inet_rx_mc_sock_params
+void log_inet_rx_sock_parms(const struct inet_rx_sock_params
 								*inet_rx_parms);
 
-void log_inet6_rx_sock_parms(const struct inet6_rx_mc_sock_params
+void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
 							*inet6_rx_parms);
 
-void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params
+void log_inet_tx_sock_parms(const struct inet_tx_sock_params
 							*inet_tx_parms);
 
-void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
+void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
 							*inet6_tx_parms);
 
 void log_opt_error(enum OPT_ERR option_err,
@@ -227,44 +227,44 @@ void cleanup_prog_parms(struct program_parameters *prog_parms);
 void init_sock_fds(struct socket_fds *sock_fds);
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
-			struct inet_rx_mc_sock_params rx_sock_parms,
+			struct inet_rx_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
-			struct inet_tx_mc_sock_params tx_sock_parms,
+			struct inet_tx_sock_params tx_sock_parms,
 			struct packet_counters *pkt_counters);
 
 void inet_to_inet6_mcast(int *inet_in_sock_fd,
-			 struct inet_rx_mc_sock_params rx_sock_parms,
+			 struct inet_rx_sock_params rx_sock_parms,
 			 int *inet6_out_sock_fd,
-			 struct inet6_tx_mc_sock_params tx_sock_parms,
+			 struct inet6_tx_sock_params tx_sock_parms,
 			 struct packet_counters *pkt_counters);
 
 void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
-			      struct inet_rx_mc_sock_params rx_sock_parms,
+			      struct inet_rx_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
-			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			      struct inet_tx_sock_params inet_tx_sock_parms,
 			      int *inet6_out_sock_fd,
-			      struct inet6_tx_mc_sock_params
+			      struct inet6_tx_sock_params
 							inet6_tx_sock_parms,
 			      struct packet_counters *pkt_counters);
 
 void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
-			  struct inet6_rx_mc_sock_params rx_sock_parms,
+			  struct inet6_rx_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
-			  struct inet6_tx_mc_sock_params tx_sock_parms,
+			  struct inet6_tx_sock_params tx_sock_parms,
 			  struct packet_counters *pkt_counters);
 
 void inet6_to_inet_mcast(int *inet6_in_sock_fd,
-			 struct inet6_rx_mc_sock_params rx_sock_parms,
+			 struct inet6_rx_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
-			 struct inet_tx_mc_sock_params tx_sock_parms,
+			 struct inet_tx_sock_params tx_sock_parms,
 			 struct packet_counters *pkt_counters);
 
 void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
-			       struct inet6_rx_mc_sock_params rx_sock_parms,
+			       struct inet6_rx_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
-			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			       struct inet_tx_sock_params inet_tx_sock_parms,
 			       int *inet6_out_sock_fd,
-			       struct inet6_tx_mc_sock_params
+			       struct inet6_tx_sock_params
 							inet6_tx_sock_parms,
 			       struct packet_counters *pkt_counters);
 
@@ -304,29 +304,29 @@ void sigusr1_handler(int signum);
 
 void sigusr2_handler(int signum);
 
-int open_inet_rx_mc_sock(const struct in_addr mc_group,
+int open_inet_rx_sock(const struct in_addr mc_group,
 			 const unsigned int port,
 			 const struct in_addr in_intf_addr);
 
-void close_inet_rx_mc_sock(const int sock_fd);
+void close_inet_rx_sock(const int sock_fd);
 
-int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
+int open_inet6_rx_sock(const struct in6_addr mc_group,
 			  const unsigned int port,
 			  const unsigned int in_intf_idx);
 
-void close_inet6_rx_mc_sock(const int sock_fd);
+void close_inet6_rx_sock(const int sock_fd);
 
-int open_inet_tx_mc_sock(const unsigned int mc_ttl,
+int open_inet_tx_sock(const unsigned int mc_ttl,
 			 const unsigned int mc_loop,
 			 const struct in_addr out_intf_addr);
 
-void close_inet_tx_mc_sock(int sock_fd);
+void close_inet_tx_sock(int sock_fd);
 
-int open_inet6_tx_mc_sock(const int mc_hops,
+int open_inet6_tx_sock(const int mc_hops,
 			  const unsigned int mc_loop,
 			  const unsigned int out_intf_idx);
 
-void close_inet6_tx_mc_sock(int sock_fd);
+void close_inet6_tx_sock(int sock_fd);
 
 int inet_tx_mcast(const int sock_fd,
 		  const void *pkt,
@@ -1338,7 +1338,7 @@ void log_prog_parms(const struct program_parameters *prog_parms)
 }
 
 
-void log_inet_rx_sock_parms(const struct inet_rx_mc_sock_params *inet_rx_parms)
+void log_inet_rx_sock_parms(const struct inet_rx_sock_params *inet_rx_parms)
 {
 	char aip_str[AIP_STR_INET_MAX_LEN + 1];
 	const unsigned int aip_str_size = AIP_STR_INET_MAX_LEN + 1;
@@ -1358,7 +1358,7 @@ void log_inet_rx_sock_parms(const struct inet_rx_mc_sock_params *inet_rx_parms)
 }
 
 
-void log_inet6_rx_sock_parms(const struct inet6_rx_mc_sock_params
+void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
 							*inet6_rx_parms)
 {
 	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
@@ -1379,7 +1379,7 @@ void log_inet6_rx_sock_parms(const struct inet6_rx_mc_sock_params
 }
 
 
-void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
+void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms)
 {
 	const unsigned int ap_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
 	char ap_str[ap_str_size];
@@ -1426,7 +1426,7 @@ void log_inet_tx_sock_parms(const struct inet_tx_mc_sock_params *inet_tx_parms)
 }
 
 
-void log_inet6_tx_sock_parms(const struct inet6_tx_mc_sock_params
+void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
 								*inet6_tx_parms)
 {
 	const unsigned int ap_str_size = 1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1;
@@ -1576,9 +1576,9 @@ void init_sock_fds(struct socket_fds *sock_fds)
 
 
 void inet_to_inet_mcast(int *inet_in_sock_fd,
-			struct inet_rx_mc_sock_params rx_sock_parms,
+			struct inet_rx_sock_params rx_sock_parms,
 			int *inet_out_sock_fd,
-			struct inet_tx_mc_sock_params tx_sock_parms,
+			struct inet_tx_sock_params tx_sock_parms,
 			struct packet_counters *pkt_counters)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
@@ -1588,13 +1588,13 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_mc_sock(tx_sock_parms.mc_ttl,
+	*inet_out_sock_fd = open_inet_tx_sock(tx_sock_parms.mc_ttl,
 		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -1619,9 +1619,9 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 
 
 void inet_to_inet6_mcast(int *inet_in_sock_fd,
-			 struct inet_rx_mc_sock_params rx_sock_parms,
+			 struct inet_rx_sock_params rx_sock_parms,
 			 int *inet6_out_sock_fd,
-			 struct inet6_tx_mc_sock_params tx_sock_parms,
+			 struct inet6_tx_sock_params tx_sock_parms,
 			 struct packet_counters *pkt_counters)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
@@ -1631,13 +1631,13 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_mc_sock(tx_sock_parms.mc_hops,
+	*inet6_out_sock_fd = open_inet6_tx_sock(tx_sock_parms.mc_hops,
 		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -1662,11 +1662,11 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 
 
 void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
-			      struct inet_rx_mc_sock_params rx_sock_parms,
+			      struct inet_rx_sock_params rx_sock_parms,
 			      int *inet_out_sock_fd,
-			      struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			      struct inet_tx_sock_params inet_tx_sock_parms,
 			      int *inet6_out_sock_fd,
-			      struct inet6_tx_mc_sock_params
+			      struct inet6_tx_sock_params
 							inet6_tx_sock_parms,
 			      struct packet_counters *pkt_counters)
 {
@@ -1678,19 +1678,19 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_mc_sock(inet_tx_sock_parms.mc_ttl,
+	*inet_out_sock_fd = open_inet_tx_sock(inet_tx_sock_parms.mc_ttl,
 		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_mc_sock(inet6_tx_sock_parms.mc_hops,
+	*inet6_out_sock_fd = open_inet6_tx_sock(inet6_tx_sock_parms.mc_hops,
 		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -1718,9 +1718,9 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 
 
 void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
-			  struct inet6_rx_mc_sock_params rx_sock_parms,
+			  struct inet6_rx_sock_params rx_sock_parms,
 			  int *inet6_out_sock_fd,
-			  struct inet6_tx_mc_sock_params tx_sock_parms,
+			  struct inet6_tx_sock_params tx_sock_parms,
 			  struct packet_counters *pkt_counters)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
@@ -1730,13 +1730,13 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_mc_sock(tx_sock_parms.mc_hops,
+	*inet6_out_sock_fd = open_inet6_tx_sock(tx_sock_parms.mc_hops,
 		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -1761,9 +1761,9 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 
 
 void inet6_to_inet_mcast(int *inet6_in_sock_fd,
-			 struct inet6_rx_mc_sock_params rx_sock_parms,
+			 struct inet6_rx_sock_params rx_sock_parms,
 			 int *inet_out_sock_fd,
-			 struct inet_tx_mc_sock_params tx_sock_parms,
+			 struct inet_tx_sock_params tx_sock_parms,
 			 struct packet_counters *pkt_counters)
 {
 	uint8_t pkt_buf[PKT_BUF_SIZE];
@@ -1773,13 +1773,13 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 
 	log_debug("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_mc_sock(tx_sock_parms.mc_ttl,
+	*inet_out_sock_fd = open_inet_tx_sock(tx_sock_parms.mc_ttl,
 		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_addr);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -1801,11 +1801,11 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 }
 
 void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
-			       struct inet6_rx_mc_sock_params rx_sock_parms,
+			       struct inet6_rx_sock_params rx_sock_parms,
 			       int *inet_out_sock_fd,
-			       struct inet_tx_mc_sock_params inet_tx_sock_parms,
+			       struct inet_tx_sock_params inet_tx_sock_parms,
 			       int *inet6_out_sock_fd,
-			       struct inet6_tx_mc_sock_params
+			       struct inet6_tx_sock_params
 							inet6_tx_sock_parms,
 			       struct packet_counters *pkt_counters)
 {
@@ -1817,19 +1817,19 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 
 	log_debug("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_mc_sock(rx_sock_parms.mc_group,
+	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
 		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet_out_sock_fd = open_inet_tx_mc_sock(inet_tx_sock_parms.mc_ttl,
+	*inet_out_sock_fd = open_inet_tx_sock(inet_tx_sock_parms.mc_ttl,
 		inet_tx_sock_parms.mc_loop, inet_tx_sock_parms.out_intf_addr);
 	if (*inet_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_mc_sock(inet6_tx_sock_parms.mc_hops,
+	*inet6_out_sock_fd = open_inet6_tx_sock(inet6_tx_sock_parms.mc_hops,
 		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
@@ -2161,7 +2161,7 @@ void sigusr2_handler(int signum)
 }
 
 
-int open_inet_rx_mc_sock(const struct in_addr mc_group,
+int open_inet_rx_sock(const struct in_addr mc_group,
 			 const unsigned int port,
 			 const struct in_addr in_intf_addr)
 {
@@ -2212,7 +2212,7 @@ int open_inet_rx_mc_sock(const struct in_addr mc_group,
 }
 
 
-void close_inet_rx_mc_sock(const int sock_fd)
+void close_inet_rx_sock(const int sock_fd)
 {
 
 
@@ -2227,7 +2227,7 @@ void close_inet_rx_mc_sock(const int sock_fd)
 }
 
 
-int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
+int open_inet6_rx_sock(const struct in6_addr mc_group,
 			  const unsigned int port,
 			  const unsigned int in_intf_idx)
 {
@@ -2296,7 +2296,7 @@ int open_inet6_rx_mc_sock(const struct in6_addr mc_group,
 }
 
 
-void close_inet6_rx_mc_sock(const int sock_fd)
+void close_inet6_rx_sock(const int sock_fd)
 {
 
 
@@ -2311,7 +2311,7 @@ void close_inet6_rx_mc_sock(const int sock_fd)
 }
 
 
-int open_inet_tx_mc_sock(const unsigned int mc_ttl,
+int open_inet_tx_sock(const unsigned int mc_ttl,
 			 const unsigned int mc_loop,
 			 const struct in_addr out_intf_addr)
 {
@@ -2361,7 +2361,7 @@ int open_inet_tx_mc_sock(const unsigned int mc_ttl,
 }
 
 
-void close_inet_tx_mc_sock(int sock_fd)
+void close_inet_tx_sock(int sock_fd)
 {
 
 
@@ -2376,7 +2376,7 @@ void close_inet_tx_mc_sock(int sock_fd)
 }
 
 
-int open_inet6_tx_mc_sock(const int mc_hops,
+int open_inet6_tx_sock(const int mc_hops,
 			  const unsigned int mc_loop,
 			  const unsigned int out_intf_idx)
 {
@@ -2430,7 +2430,7 @@ int open_inet6_tx_mc_sock(const int mc_hops,
 }
 
 
-void close_inet6_tx_mc_sock(int sock_fd)
+void close_inet6_tx_sock(int sock_fd)
 {
 
 
@@ -2519,10 +2519,10 @@ void close_sockets(const struct socket_fds *sock_fds)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	close_inet_rx_mc_sock(sock_fds->inet_in_sock_fd);
-	close_inet6_rx_mc_sock(sock_fds->inet6_in_sock_fd);
-	close_inet_tx_mc_sock(sock_fds->inet_out_sock_fd);
-	close_inet6_tx_mc_sock(sock_fds->inet6_out_sock_fd);
+	close_inet_rx_sock(sock_fds->inet_in_sock_fd);
+	close_inet6_rx_sock(sock_fds->inet6_in_sock_fd);
+	close_inet_tx_sock(sock_fds->inet_out_sock_fd);
+	close_inet6_tx_sock(sock_fds->inet6_out_sock_fd);
 
 	log_debug_med("%s() exit\n", __func__);
 
