@@ -316,9 +316,7 @@ int open_inet_tx_sock(const struct inet_tx_sock_params *sock_parms);
 
 void close_inet_tx_sock(int sock_fd);
 
-int open_inet6_tx_sock(const int mc_hops,
-			  const unsigned int mc_loop,
-			  const unsigned int out_intf_idx);
+int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms);
 
 void close_inet6_tx_sock(int sock_fd);
 
@@ -1628,8 +1626,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_sock(tx_sock_parms.mc_hops,
-		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
+	*inet6_out_sock_fd = open_inet6_tx_sock(&tx_sock_parms);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1679,8 +1676,7 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_sock(inet6_tx_sock_parms.mc_hops,
-		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
+	*inet6_out_sock_fd = open_inet6_tx_sock(&inet6_tx_sock_parms);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1724,8 +1720,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_sock(tx_sock_parms.mc_hops,
-		tx_sock_parms.mc_loop, tx_sock_parms.out_intf_idx);
+	*inet6_out_sock_fd = open_inet6_tx_sock(&tx_sock_parms);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1813,8 +1808,7 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 		exit_errno(__func__, __LINE__, errno);
 	}
 
-	*inet6_out_sock_fd = open_inet6_tx_sock(inet6_tx_sock_parms.mc_hops,
-		inet6_tx_sock_parms.mc_loop, inet6_tx_sock_parms.out_intf_idx);
+	*inet6_out_sock_fd = open_inet6_tx_sock(&inet6_tx_sock_parms);
 	if (*inet6_out_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -2354,9 +2348,7 @@ void close_inet_tx_sock(int sock_fd)
 }
 
 
-int open_inet6_tx_sock(const int mc_hops,
-			  const unsigned int mc_loop,
-			  const unsigned int out_intf_idx)
+int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms)
 {
 	int sock_fd;
 	int ret;
@@ -2372,8 +2364,8 @@ int open_inet6_tx_sock(const int mc_hops,
 		return -1;
 	}
 
-	if (mc_hops > 0) {
-		hops = mc_hops & 0xff;
+	if (sock_parms->mc_hops > 0) {
+		hops = sock_parms->mc_hops & 0xff;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
 			&hops, sizeof(hops));	
 		if (ret == -1) {
@@ -2381,7 +2373,7 @@ int open_inet6_tx_sock(const int mc_hops,
 		}
 	}
 
-	if (mc_loop == 1) {
+	if (sock_parms->mc_loop == 1) {
 		loop = 1;
 	} else {
 		loop = 0;
@@ -2392,8 +2384,8 @@ int open_inet6_tx_sock(const int mc_hops,
 		return -1;
 	}
 
-	if (out_intf_idx) {
-		out_ifidx = out_intf_idx;
+	if (sock_parms->out_intf_idx) {
+		out_ifidx = sock_parms->out_intf_idx;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
 			&out_ifidx, sizeof(out_ifidx));
 		if (ret == -1) {
