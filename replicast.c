@@ -308,9 +308,7 @@ int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms);
 
 void close_inet_rx_sock(const int sock_fd);
 
-int open_inet6_rx_sock(const struct in6_addr mc_group,
-			  const unsigned int port,
-			  const unsigned int in_intf_idx);
+int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms);
 
 void close_inet6_rx_sock(const int sock_fd);
 
@@ -1725,8 +1723,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	*inet6_in_sock_fd = open_inet6_rx_sock(&rx_sock_parms);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1768,8 +1765,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 
 	log_debug("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	*inet6_in_sock_fd = open_inet6_rx_sock(&rx_sock_parms);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1812,8 +1808,7 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 
 	log_debug("%s() entry\n", __func__);
 
-	*inet6_in_sock_fd = open_inet6_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_idx);
+	*inet6_in_sock_fd = open_inet6_rx_sock(&rx_sock_parms);
 	if (*inet6_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -2220,9 +2215,7 @@ void close_inet_rx_sock(const int sock_fd)
 }
 
 
-int open_inet6_rx_sock(const struct in6_addr mc_group,
-			  const unsigned int port,
-			  const unsigned int in_intf_idx)
+int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 {
 	int ret;
 	int sock_fd;
@@ -2253,10 +2246,10 @@ int open_inet6_rx_sock(const struct in6_addr mc_group,
 
 	memset(&sa_in6_mcaddr, 0, sizeof(sa_in6_mcaddr));
 	sa_in6_mcaddr.sin6_family = AF_INET6;
-	sa_in6_mcaddr.sin6_addr = mc_group;
-	sa_in6_mcaddr.sin6_port = htons(port);
+	sa_in6_mcaddr.sin6_addr = sock_parms->mc_group;
+	sa_in6_mcaddr.sin6_port = htons(sock_parms->port);
 	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_mcaddr.sin6_addr)) {
-		sa_in6_mcaddr.sin6_scope_id = in_intf_idx;
+		sa_in6_mcaddr.sin6_scope_id = sock_parms->in_intf_idx;
 	}
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_mcaddr,
 		sizeof(sa_in6_mcaddr));
@@ -2267,9 +2260,9 @@ int open_inet6_rx_sock(const struct in6_addr mc_group,
 		return -1;
 	}
 
-	if (IN6_IS_ADDR_MULTICAST(&mc_group)) {
-		ipv6_mcast_req.ipv6mr_multiaddr = mc_group;
-		ipv6_mcast_req.ipv6mr_interface = in_intf_idx;
+	if (IN6_IS_ADDR_MULTICAST(&sock_parms->mc_group)) {
+		ipv6_mcast_req.ipv6mr_multiaddr = sock_parms->mc_group;
+		ipv6_mcast_req.ipv6mr_interface = sock_parms->in_intf_idx;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 			&ipv6_mcast_req, sizeof(ipv6_mcast_req));
 		if (ret == -1) {
