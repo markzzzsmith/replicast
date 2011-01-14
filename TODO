@@ -1,9 +1,4 @@
 
 o handle get_opt_long() missing option variables - manual page not clear
 
-o properly handle a realloc() failure in inetaddr.c
-
 o shorten some of the validate options routines
-
-o better return of realloc failure indication to calling routines in ap_inet_csv() etc. routines. Possibly redesign them.
-
