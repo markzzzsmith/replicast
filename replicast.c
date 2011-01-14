@@ -304,9 +304,7 @@ void sigusr1_handler(int signum);
 
 void sigusr2_handler(int signum);
 
-int open_inet_rx_sock(const struct in_addr mc_group,
-			 const unsigned int port,
-			 const struct in_addr in_intf_addr);
+int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms);
 
 void close_inet_rx_sock(const int sock_fd);
 
@@ -1588,8 +1586,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
+	*inet_in_sock_fd = open_inet_rx_sock(&rx_sock_parms);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1631,8 +1628,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
+	*inet_in_sock_fd = open_inet_rx_sock(&rx_sock_parms);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -1678,8 +1674,7 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 
 	log_debug_med("%s() entry\n", __func__);
 
-	*inet_in_sock_fd = open_inet_rx_sock(rx_sock_parms.mc_group,
-		rx_sock_parms.port, rx_sock_parms.in_intf_addr);
+	*inet_in_sock_fd = open_inet_rx_sock(&rx_sock_parms);
 	if (*inet_in_sock_fd == -1) {
 		exit_errno(__func__, __LINE__, errno);
 	}
@@ -2161,9 +2156,7 @@ void sigusr2_handler(int signum)
 }
 
 
-int open_inet_rx_sock(const struct in_addr mc_group,
-			 const unsigned int port,
-			 const struct in_addr in_intf_addr)
+int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms)
 {
 	int ret;
 	int sock_fd;
@@ -2187,17 +2180,17 @@ int open_inet_rx_sock(const struct in_addr mc_group,
 
 	memset(&sa_in_mcaddr, 0, sizeof(sa_in_mcaddr));
 	sa_in_mcaddr.sin_family = AF_INET;
-	sa_in_mcaddr.sin_addr =  mc_group;
-	sa_in_mcaddr.sin_port = htons(port);
+	sa_in_mcaddr.sin_addr =  sock_parms->mc_group;
+	sa_in_mcaddr.sin_port = htons(sock_parms->port);
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in_mcaddr,
 		sizeof(sa_in_mcaddr));
 	if (ret == -1) {
 		return -1;
 	}
 
-	if (IN_MULTICAST(ntohl(mc_group.s_addr))) {
-		ip_mcast_req.imr_multiaddr = mc_group;
-		ip_mcast_req.imr_interface = in_intf_addr;
+	if (IN_MULTICAST(ntohl(sock_parms->mc_group.s_addr))) {
+		ip_mcast_req.imr_multiaddr = sock_parms->mc_group;
+		ip_mcast_req.imr_interface = sock_parms->in_intf_addr;
 		ret = setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
 			&ip_mcast_req, sizeof(ip_mcast_req));
 		if (ret == -1) {
