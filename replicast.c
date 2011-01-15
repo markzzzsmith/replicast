@@ -92,7 +92,7 @@ enum REPLICAST_MODE {
 
 
 struct inet_rx_sock_params {
-	struct in_addr mc_group;
+	struct in_addr rx_addr;
 	unsigned int port;
 	struct in_addr in_intf_addr;	
 };
@@ -106,7 +106,7 @@ struct inet_tx_sock_params {
 };
 
 struct inet6_rx_sock_params {
-	struct in6_addr mc_group;
+	struct in6_addr rx_addr;
 	unsigned int port;
 	unsigned int in_intf_idx;
 };
@@ -708,7 +708,7 @@ void init_prog_parms(struct program_parameters *prog_parms)
 
 	prog_parms->become_daemon = 1;
 
-	prog_parms->inet_rx_sock_parms.mc_group.s_addr = ntohl(INADDR_NONE);
+	prog_parms->inet_rx_sock_parms.rx_addr.s_addr = ntohl(INADDR_NONE);
 	prog_parms->inet_rx_sock_parms.port = 0;
 	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = ntohl(INADDR_ANY);
 
@@ -718,7 +718,7 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_tx_sock_parms.dests = NULL;
 	prog_parms->inet_tx_sock_parms.dests_num = 0;
 
-	memcpy(&prog_parms->inet6_rx_sock_parms.mc_group, &in6addr_any,
+	memcpy(&prog_parms->inet6_rx_sock_parms.rx_addr, &in6addr_any,
 		sizeof(in6addr_any));
 	prog_parms->inet6_rx_sock_parms.port = 0;
 	prog_parms->inet6_rx_sock_parms.in_intf_idx = 0;
@@ -982,7 +982,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		log_debug_low("%s() prog_opts->inet_rx_sock_mcgroup_set\n",
 								__func__);
 		ret = aip_ptoh_inet(prog_opts->inet_rx_sock_mcgroup_str,
-			&prog_parms->inet_rx_sock_parms.mc_group,
+			&prog_parms->inet_rx_sock_parms.rx_addr,
 			&in_intf_addr,
 			&prog_parms->inet_rx_sock_parms.port,
 			&aip_ptoh_err);
@@ -1035,7 +1035,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		log_debug_low("%s() prog_opts->inet6_rx_sock_mcgroup_set\n",
 								__func__);
 		ret = aip_ptoh_inet6(prog_opts->inet6_rx_sock_mcgroup_str,
-			&prog_parms->inet6_rx_sock_parms.mc_group,
+			&prog_parms->inet6_rx_sock_parms.rx_addr,
 			&prog_parms->inet6_rx_sock_parms.in_intf_idx,
 			&prog_parms->inet6_rx_sock_parms.port,
 			&aip_ptoh_err);
@@ -1342,7 +1342,7 @@ void log_inet_rx_sock_parms(const struct inet_rx_sock_params *inet_rx_parms)
 
 	log_msg(LOG_SEV_INFO, "inet rx src: ");
 
-	aip_htop_inet(&inet_rx_parms->mc_group, &inet_rx_parms->in_intf_addr,
+	aip_htop_inet(&inet_rx_parms->rx_addr, &inet_rx_parms->in_intf_addr,
 		inet_rx_parms->port, aip_str, aip_str_size);
 
 	log_msg(LOG_SEV_INFO, "%s\n", aip_str);
@@ -1363,7 +1363,7 @@ void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
 
 	log_msg(LOG_SEV_INFO, "inet6 rx src: ");
 
-	aip_htop_inet6(&inet6_rx_parms->mc_group, inet6_rx_parms->in_intf_idx,
+	aip_htop_inet6(&inet6_rx_parms->rx_addr, inet6_rx_parms->in_intf_idx,
 		inet6_rx_parms->port, aip_str, aip_str_size);
 
 	log_msg(LOG_SEV_INFO, "%s\n", aip_str);
@@ -2167,7 +2167,7 @@ int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms)
 
 	memset(&sa_in_mcaddr, 0, sizeof(sa_in_mcaddr));
 	sa_in_mcaddr.sin_family = AF_INET;
-	sa_in_mcaddr.sin_addr =  sock_parms->mc_group;
+	sa_in_mcaddr.sin_addr =  sock_parms->rx_addr;
 	sa_in_mcaddr.sin_port = htons(sock_parms->port);
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in_mcaddr,
 		sizeof(sa_in_mcaddr));
@@ -2175,8 +2175,8 @@ int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms)
 		return -1;
 	}
 
-	if (IN_MULTICAST(ntohl(sock_parms->mc_group.s_addr))) {
-		ip_mcast_req.imr_multiaddr = sock_parms->mc_group;
+	if (IN_MULTICAST(ntohl(sock_parms->rx_addr.s_addr))) {
+		ip_mcast_req.imr_multiaddr = sock_parms->rx_addr;
 		ip_mcast_req.imr_interface = sock_parms->in_intf_addr;
 		ret = setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
 			&ip_mcast_req, sizeof(ip_mcast_req));
@@ -2238,7 +2238,7 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 
 	memset(&sa_in6_mcaddr, 0, sizeof(sa_in6_mcaddr));
 	sa_in6_mcaddr.sin6_family = AF_INET6;
-	sa_in6_mcaddr.sin6_addr = sock_parms->mc_group;
+	sa_in6_mcaddr.sin6_addr = sock_parms->rx_addr;
 	sa_in6_mcaddr.sin6_port = htons(sock_parms->port);
 	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_mcaddr.sin6_addr)) {
 		sa_in6_mcaddr.sin6_scope_id = sock_parms->in_intf_idx;
@@ -2252,8 +2252,8 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 		return -1;
 	}
 
-	if (IN6_IS_ADDR_MULTICAST(&sock_parms->mc_group)) {
-		ipv6_mcast_req.ipv6mr_multiaddr = sock_parms->mc_group;
+	if (IN6_IS_ADDR_MULTICAST(&sock_parms->rx_addr)) {
+		ipv6_mcast_req.ipv6mr_multiaddr = sock_parms->rx_addr;
 		ipv6_mcast_req.ipv6mr_interface = sock_parms->in_intf_idx;
 		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 			&ipv6_mcast_req, sizeof(ipv6_mcast_req));
