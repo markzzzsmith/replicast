@@ -103,6 +103,7 @@ struct inet_tx_sock_params {
 	struct in_addr out_intf_addr;
 	struct sockaddr_in *dests;
 	unsigned int dests_num;	
+	unsigned int mc_dests_num;
 };
 
 struct inet6_rx_sock_params {
@@ -717,6 +718,7 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = ntohl(INADDR_ANY);
 	prog_parms->inet_tx_sock_parms.dests = NULL;
 	prog_parms->inet_tx_sock_parms.dests_num = 0;
+	prog_parms->inet_tx_sock_parms.mc_dests_num = 0;
 
 	memcpy(&prog_parms->inet6_rx_sock_parms.rx_addr, &in6addr_any,
 		sizeof(in6addr_any));
@@ -1102,6 +1104,13 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_parms->inet_tx_sock_parms.dests,
 				0, 1, 1, NULL, NULL, 0);
 			prog_parms->inet_tx_sock_parms.dests_num = ret;
+			prog_parms->inet_tx_sock_parms.mc_dests_num = 
+				num_inet_mcaddrs(
+					prog_parms->inet_tx_sock_parms.dests,
+					prog_parms->
+						inet_tx_sock_parms.dests_num);
+			log_debug_low("%s() num_inet_mcaddrs = %d\n", __func__,
+				prog_parms->inet_tx_sock_parms.mc_dests_num);
 		}
 
 		if (prog_opts->inet_tx_sock_mc_ttl_set) {
@@ -2304,30 +2313,38 @@ int open_inet_tx_sock(const struct inet_tx_sock_params *sock_parms)
 		return -1;
 	}
 
-	if (sock_parms->mc_ttl > 0) {
-		ttl = sock_parms->mc_ttl & 0xff;
-		ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_TTL,
-			&ttl, sizeof(ttl));	
+	if (sock_parms->mc_dests_num > 0) {
+
+		log_debug_low("%s() sock_parms->mc_dests_num = %d\n", __func__,
+			sock_parms->mc_dests_num);
+
+		if (sock_parms->mc_ttl > 0) {
+			ttl = sock_parms->mc_ttl & 0xff;
+			ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_TTL,
+				&ttl, sizeof(ttl));	
+			if (ret == -1) {
+				return -1;
+			}
+		}
+
+		if (sock_parms->mc_loop == 1) {
+			loop = 1;
+		} else {
+			loop = 0;
+		}
+		ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop,
+			sizeof(loop));
 		if (ret == -1) {
 			return -1;
 		}
-	}
 
-	if (sock_parms->mc_loop == 1) {
-		loop = 1;
-	} else {
-		loop = 0;
-	}
-	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop,
-		sizeof(loop));
-	if (ret == -1) {
-		return -1;
-	}
-
-	ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_IF,
-		&sock_parms->out_intf_addr, sizeof(sock_parms->out_intf_addr));
-	if (ret == -1) {
-		return -1;
+		ret = setsockopt(sock_fd, IPPROTO_IP, IP_MULTICAST_IF,
+			&sock_parms->out_intf_addr,
+			sizeof(sock_parms->out_intf_addr));
+		if (ret == -1) {
+			return -1;
+		}
+ 
 	}
 
 	log_debug_med("%s() exit\n", __func__);

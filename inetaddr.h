@@ -90,4 +90,7 @@ int inet_if_addr(const char *str,
 		 struct in_addr *if_addr);
 
 
+unsigned int num_inet_mcaddrs(const struct sockaddr_in *sa_list,
+			      const int sa_list_len);
+
 #endif /* __INETADDR_H */
