@@ -567,6 +567,25 @@ unsigned int num_inet_mcaddrs(const struct sockaddr_in *sa_list,
 }
 
 
+unsigned int num_inet6_mcaddrs(const struct sockaddr_in6 *sa_list,
+			       const int sa_list_len)
+{
+	int sa_num;
+	unsigned int num_mcaddrs = 0;
+	const struct sockaddr_in6 *sa;
+
+
+	for (sa_num = 0; sa_num < sa_list_len; sa_num++) {
+		sa = &sa_list[sa_num];
+		if ( IN6_IS_ADDR_MULTICAST( &sa->sin6_addr ) ) {
+			num_mcaddrs++;
+		} 
+	}
+
+	return num_mcaddrs;
+
+}
+
 static int get_if_addr(const char *ifname, struct in_addr *addr)
 {
 	int sock_fd;

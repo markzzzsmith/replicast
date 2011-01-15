@@ -118,6 +118,7 @@ struct inet6_tx_sock_params {
 	unsigned int out_intf_idx;
 	struct sockaddr_in6 *dests;
 	unsigned int dests_num;
+	unsigned int mc_dests_num;
 };
 
 struct socket_fds {
@@ -730,6 +731,7 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet6_tx_sock_parms.out_intf_idx = 0;
 	prog_parms->inet6_tx_sock_parms.dests = NULL;
 	prog_parms->inet6_tx_sock_parms.dests_num = 0;
+	prog_parms->inet6_tx_sock_parms.mc_dests_num = 0;
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -1180,6 +1182,13 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_parms->inet6_tx_sock_parms.dests,
 				0, 1, 1, NULL, NULL, 0);
 			prog_parms->inet6_tx_sock_parms.dests_num = ret;
+			prog_parms->inet6_tx_sock_parms.mc_dests_num = 
+				num_inet6_mcaddrs(
+					prog_parms->inet6_tx_sock_parms.dests,
+					prog_parms->
+						inet6_tx_sock_parms.dests_num);
+			log_debug_low("%s() num_inet6_mcaddrs = %d\n", __func__,
+				prog_parms->inet6_tx_sock_parms.mc_dests_num);
 		}
 
 		if (prog_opts->inet6_tx_sock_mc_hops_set) {
@@ -2385,33 +2394,41 @@ int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms)
 		return -1;
 	}
 
-	if (sock_parms->mc_hops > 0) {
-		hops = sock_parms->mc_hops & 0xff;
-		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-			&hops, sizeof(hops));	
+	if (sock_parms->mc_dests_num > 0) {
+
+		log_debug_low("%s() sock_parms->mc_dests_num = %d\n", __func__,
+			sock_parms->mc_dests_num);
+
+		if (sock_parms->mc_hops > 0) {
+			hops = sock_parms->mc_hops & 0xff;
+			ret = setsockopt(sock_fd, IPPROTO_IPV6,
+				IPV6_MULTICAST_HOPS, &hops, sizeof(hops));	
+			if (ret == -1) {
+				return -1;
+			}
+		}
+
+		if (sock_parms->mc_loop == 1) {
+			loop = 1;
+		} else {
+			loop = 0;
+		}
+		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+			&loop, sizeof(loop));
 		if (ret == -1) {
 			return -1;
 		}
-	}
 
-	if (sock_parms->mc_loop == 1) {
-		loop = 1;
-	} else {
-		loop = 0;
-	}
-	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop,
-		sizeof(loop));
-	if (ret == -1) {
-		return -1;
-	}
-
-	if (sock_parms->out_intf_idx) {
-		out_ifidx = sock_parms->out_intf_idx;
-		ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-			&out_ifidx, sizeof(out_ifidx));
-		if (ret == -1) {
-			return -1;
+		if (sock_parms->out_intf_idx) {
+			out_ifidx = sock_parms->out_intf_idx;
+			ret = setsockopt(sock_fd, IPPROTO_IPV6,
+				IPV6_MULTICAST_IF, &out_ifidx,
+				sizeof(out_ifidx));
+			if (ret == -1) {
+				return -1;
+			}
 		}
+
 	}
 
 	log_debug_med("%s() exit\n", __func__);
