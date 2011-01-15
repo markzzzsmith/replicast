@@ -226,19 +226,19 @@ void cleanup_prog_parms(struct program_parameters *prog_parms);
 
 void init_sock_fds(struct socket_fds *sock_fds);
 
-void inet_to_inet_mcast(int *inet_in_sock_fd,
+void inet_to_inet_rcast(int *inet_in_sock_fd,
 			const struct inet_rx_sock_params *rx_sock_parms,
 			int *inet_out_sock_fd,
 			const struct inet_tx_sock_params *tx_sock_parms,
 			struct packet_counters *pkt_counters);
 
-void inet_to_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet6_rcast(int *inet_in_sock_fd,
 			 const struct inet_rx_sock_params *rx_sock_parms,
 			 int *inet6_out_sock_fd,
 			 const struct inet6_tx_sock_params *tx_sock_parms,
 			 struct packet_counters *pkt_counters);
 
-void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet_inet6_rcast(int *inet_in_sock_fd,
 			      const struct inet_rx_sock_params *rx_sock_parms,
 			      int *inet_out_sock_fd,
 			      const struct inet_tx_sock_params
@@ -248,19 +248,19 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 							*inet6_tx_sock_parms,
 			      struct packet_counters *pkt_counters);
 
-void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet6_rcast(int *inet6_in_sock_fd,
 			  const struct inet6_rx_sock_params *rx_sock_parms,
 			  int *inet6_out_sock_fd,
 			  const struct inet6_tx_sock_params *tx_sock_parms,
 			  struct packet_counters *pkt_counters);
 
-void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_rcast(int *inet6_in_sock_fd,
 			 const struct inet6_rx_sock_params *rx_sock_parms,
 			 int *inet_out_sock_fd,
 			 const struct inet_tx_sock_params *tx_sock_parms,
 			 struct packet_counters *pkt_counters);
 
-void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_inet6_rcast(int *inet6_in_sock_fd,
 			       const struct inet6_rx_sock_params *rx_sock_parms,
 			       int *inet_out_sock_fd,
 			       const struct inet_tx_sock_params
@@ -322,12 +322,12 @@ int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms);
 
 void close_inet6_tx_sock(int sock_fd);
 
-int inet_tx_mcast(const int sock_fd,
+int inet_tx_rcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
  		  const struct sockaddr_in inet_dests[]);
 
-int inet6_tx_mcast(const int sock_fd,
+int inet6_tx_rcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
  		   const struct sockaddr_in6 inet6_dests[]);
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet_to_inet_mcast(&sock_fds.inet_in_sock_fd,
+		inet_to_inet_rcast(&sock_fds.inet_in_sock_fd,
 				   &prog_parms.inet_rx_sock_parms,
 				   &sock_fds.inet_out_sock_fd,
 				   &prog_parms.inet_tx_sock_parms,
@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet_to_inet6_mcast(&sock_fds.inet_in_sock_fd,
+		inet_to_inet6_rcast(&sock_fds.inet_in_sock_fd,
 				    &prog_parms.inet_rx_sock_parms,
 				    &sock_fds.inet6_out_sock_fd,
 				    &prog_parms.inet6_tx_sock_parms,
@@ -418,7 +418,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet_to_inet_inet6_mcast(&sock_fds.inet_in_sock_fd,
+		inet_to_inet_inet6_rcast(&sock_fds.inet_in_sock_fd,
 					 &prog_parms.inet_rx_sock_parms,
 					 &sock_fds.inet_out_sock_fd,
 					 &prog_parms.inet_tx_sock_parms,
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet6_to_inet6_mcast(&sock_fds.inet6_in_sock_fd,
+		inet6_to_inet6_rcast(&sock_fds.inet6_in_sock_fd,
 				     &prog_parms.inet6_rx_sock_parms,
 				     &sock_fds.inet6_out_sock_fd,
 				     &prog_parms.inet6_tx_sock_parms,
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet6_to_inet_mcast(&sock_fds.inet6_in_sock_fd,
+		inet6_to_inet_rcast(&sock_fds.inet6_in_sock_fd,
 				    &prog_parms.inet6_rx_sock_parms,
 				    &sock_fds.inet_out_sock_fd,
 				    &prog_parms.inet_tx_sock_parms,
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 		}
 		log_prog_banner();
 		log_prog_parms(&prog_parms);
-		inet6_to_inet_inet6_mcast(&sock_fds.inet6_in_sock_fd,
+		inet6_to_inet_inet6_rcast(&sock_fds.inet6_in_sock_fd,
 				    &prog_parms.inet6_rx_sock_parms,
 				    &sock_fds.inet_out_sock_fd,
 				    &prog_parms.inet_tx_sock_parms,
@@ -1569,7 +1569,7 @@ void init_sock_fds(struct socket_fds *sock_fds)
 }
 
 
-void inet_to_inet_mcast(int *inet_in_sock_fd,
+void inet_to_inet_rcast(int *inet_in_sock_fd,
 			const struct inet_rx_sock_params *rx_sock_parms,
 			int *inet_out_sock_fd,
 			const struct inet_tx_sock_params *tx_sock_parms,
@@ -1599,7 +1599,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
@@ -1610,7 +1610,7 @@ void inet_to_inet_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet_to_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet6_rcast(int *inet_in_sock_fd,
 			 const struct inet_rx_sock_params *rx_sock_parms,
 			 int *inet6_out_sock_fd,
 			 const struct inet6_tx_sock_params *tx_sock_parms,
@@ -1640,7 +1640,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
@@ -1651,7 +1651,7 @@ void inet_to_inet6_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
+void inet_to_inet_inet6_rcast(int *inet_in_sock_fd,
 			      const struct inet_rx_sock_params *rx_sock_parms,
 			      int *inet_out_sock_fd,
 			      const struct inet_tx_sock_params
@@ -1691,10 +1691,10 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
-			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
@@ -1705,7 +1705,7 @@ void inet_to_inet_inet6_mcast(int *inet_in_sock_fd,
 }
 
 
-void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet6_rcast(int *inet6_in_sock_fd,
 			  const struct inet6_rx_sock_params *rx_sock_parms,
 			  int *inet6_out_sock_fd,
 			  const struct inet6_tx_sock_params *tx_sock_parms,
@@ -1735,7 +1735,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
@@ -1746,7 +1746,7 @@ void inet6_to_inet6_mcast(int *inet6_in_sock_fd,
 }
 
 
-void inet6_to_inet_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_rcast(int *inet6_in_sock_fd,
 			 const struct inet6_rx_sock_params *rx_sock_parms,
 			 int *inet_out_sock_fd,
 			 const struct inet_tx_sock_params *tx_sock_parms,
@@ -1776,7 +1776,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
@@ -1784,7 +1784,7 @@ void inet6_to_inet_mcast(int *inet6_in_sock_fd,
 
 }
 
-void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
+void inet6_to_inet_inet6_rcast(int *inet6_in_sock_fd,
 			       const struct inet6_rx_sock_params *rx_sock_parms,
 			       int *inet_out_sock_fd,
 			       const struct inet_tx_sock_params
@@ -1824,10 +1824,10 @@ void inet6_to_inet_inet6_mcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_inet_pkts = inet_tx_mcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet_tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
-			txed_inet6_pkts = inet6_tx_mcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
@@ -2419,7 +2419,7 @@ void close_inet6_tx_sock(int sock_fd)
 }
 
 
-int inet_tx_mcast(const int sock_fd,
+int inet_tx_rcast(const int sock_fd,
 		  const void *pkt,
 		  const size_t pkt_len,
  		  const struct sockaddr_in inet_dests[])
@@ -2453,7 +2453,7 @@ int inet_tx_mcast(const int sock_fd,
 }
 
 
-int inet6_tx_mcast(const int sock_fd,
+int inet6_tx_rcast(const int sock_fd,
 		   const void *pkt,
 		   const size_t pkt_len,
  		   const struct sockaddr_in6 inet6_dests[])
