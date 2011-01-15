@@ -2258,7 +2258,8 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 	sa_in6_rxaddr.sin6_family = AF_INET6;
 	sa_in6_rxaddr.sin6_addr = sock_parms->rx_addr;
 	sa_in6_rxaddr.sin6_port = htons(sock_parms->port);
-	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_rxaddr.sin6_addr)) {
+	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_rxaddr.sin6_addr) ||
+	    IN6_IS_ADDR_LINKLOCAL(&sa_in6_rxaddr.sin6_addr) ) {
 		sa_in6_rxaddr.sin6_scope_id = sock_parms->in_intf_idx;
 	}
 	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_rxaddr,
