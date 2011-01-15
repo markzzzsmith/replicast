@@ -2148,7 +2148,7 @@ int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms)
 	int ret;
 	int sock_fd;
 	int one = 1;
-	struct sockaddr_in sa_in_mcaddr;
+	struct sockaddr_in sa_in_rxaddr;
 	struct ip_mreq ip_mcast_req;
 
 
@@ -2165,12 +2165,12 @@ int open_inet_rx_sock(const struct inet_rx_sock_params *sock_parms)
 		return -1;
 	}
 
-	memset(&sa_in_mcaddr, 0, sizeof(sa_in_mcaddr));
-	sa_in_mcaddr.sin_family = AF_INET;
-	sa_in_mcaddr.sin_addr =  sock_parms->rx_addr;
-	sa_in_mcaddr.sin_port = htons(sock_parms->port);
-	ret = bind(sock_fd, (struct sockaddr *) &sa_in_mcaddr,
-		sizeof(sa_in_mcaddr));
+	memset(&sa_in_rxaddr, 0, sizeof(sa_in_rxaddr));
+	sa_in_rxaddr.sin_family = AF_INET;
+	sa_in_rxaddr.sin_addr =  sock_parms->rx_addr;
+	sa_in_rxaddr.sin_port = htons(sock_parms->port);
+	ret = bind(sock_fd, (struct sockaddr *) &sa_in_rxaddr,
+		sizeof(sa_in_rxaddr));
 	if (ret == -1) {
 		return -1;
 	}
@@ -2212,7 +2212,7 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 	int ret;
 	int sock_fd;
 	int one = 1;
-	struct sockaddr_in6 sa_in6_mcaddr;
+	struct sockaddr_in6 sa_in6_rxaddr;
 	struct ipv6_mreq ipv6_mcast_req;
 
 
@@ -2236,15 +2236,15 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 		return -1;
 	}
 
-	memset(&sa_in6_mcaddr, 0, sizeof(sa_in6_mcaddr));
-	sa_in6_mcaddr.sin6_family = AF_INET6;
-	sa_in6_mcaddr.sin6_addr = sock_parms->rx_addr;
-	sa_in6_mcaddr.sin6_port = htons(sock_parms->port);
-	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_mcaddr.sin6_addr)) {
-		sa_in6_mcaddr.sin6_scope_id = sock_parms->in_intf_idx;
+	memset(&sa_in6_rxaddr, 0, sizeof(sa_in6_rxaddr));
+	sa_in6_rxaddr.sin6_family = AF_INET6;
+	sa_in6_rxaddr.sin6_addr = sock_parms->rx_addr;
+	sa_in6_rxaddr.sin6_port = htons(sock_parms->port);
+	if (IN6_IS_ADDR_MC_LINKLOCAL(&sa_in6_rxaddr.sin6_addr)) {
+		sa_in6_rxaddr.sin6_scope_id = sock_parms->in_intf_idx;
 	}
-	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_mcaddr,
-		sizeof(sa_in6_mcaddr));
+	ret = bind(sock_fd, (struct sockaddr *) &sa_in6_rxaddr,
+		sizeof(sa_in6_rxaddr));
 	if (ret == -1) {
 		log_debug_low("%s(): bind() == %d\n", __func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
