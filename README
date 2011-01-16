@@ -79,7 +79,61 @@ attached to. These options have no effect on the ttl or hop-count for unicast
 traffic; the host's unicast value will be used.
 
 
+4. Miscellaneous Notes
+~~~~~~~~~~~~~~~~~~~~~~
 
+4.1 Static multicast routes under Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unless interfaces are specified, inbound and outbound multicast interfaces
+are selected using route table lookups for the multicast address, for both
+IPv4 and IPv6, using the longest match rule.
+
+4.1.1 IPv4
+~~~~~~~~~~
+For IPv4, the main unicast route table is used.
+
+To create an IPv4 multicast static route, directing all multicast receiving
+and transmitting applications to use eth0, use the following command :
+
+ip route add 224.0.0.0/4 dev eth0
+
+To then have receivers or transmitters use eth1 for IPv4 multicast group
+224.0.0.35, use :
+
+ip route add 224.0.0.35/32 dev eth1
+
+
+4.1.2 IPv6
+~~~~~~~~~~
+For IPv6, the "local" unicast route table is used for multicast route matching, rather than the main  route table.
+
+To view the "local" unicast route table, use the following :
+
+ip -6 route show table local
+
+There will already be some default multicast routes created by the kernel for
+ff00::/8.
+
+The following command will add a multicast route for all site-local multicast
+addresses :
+
+ip -6 route add ff05::/16 dev eth0 table local
+
+As with IPv4, a more specific route can be used to select a different
+interface :
+
+ip -6 route add ff05::30/128 dev eth1 table local
+
+
+4.2 Viewing multicast group membership under Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+4.3 Permitting multicast through the Linux firewall
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+4.3 VLC
+~~~~~~~
 
 1. IPv4 Static Routes for Multicast Input and Output Interface Selection
 
