@@ -1,3 +1,83 @@
+Replicast v0.1
+Mark Smith, <markzzzsmith@yahoo.com.au>
+16th January 2011
+
+1. Introduction
+~~~~~~~~~~~~~~~
+Replicast replicates or copies the payloads of UDP datagrams from one source to
+one or more destinations.
+
+Sources can be -
+
+o  IPv4 or IPv6
+o  unicast or multicast
+
+Destinations can be -
+
+o  IPv4 and/or IPv6
+o  unicast and/or multicast
+
+Some examples of what replicast can be used for -
+
+o  make IPv4 multicast traffic  available to IPv6 multicast clients or
+   vice-versa.
+o  take IPv4 or IPv6 multicast traffic from one group available over a
+   number of different IPv4 and/or IPv6 multicast groups.
+o  take IPv4 or IPv6 multicast traffic from one group and unicast it to one
+   or more IPv4 or IPv6 destinations.
+o  take IPv4 or IPv6 unicast traffic and multicast it to one or more IPv4
+   and/or IPv6 multicast destinations.
+
+
+2. Command Line Options
+~~~~~~~~~~~~~~~~~~~~~~~
+See "replicast -help" for the available command line options and some examples.
+
+
+3. Option Notes
+~~~~~~~~~~~~~~~~
+The "replicast -help" text may be a bit terse, here are some additional notes.
+
+3.1 -4src and -6src unicast addresses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For IPv4, the address 0.0.0.0 represents any unicast address on the host. For
+IPv6 the equivalent is [::].
+
+3.2 -4src and -6src interface selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For IPv4 multicast groups, and for most IPv6 multicast groups, the incoming
+interface can be specified, instead of the host's route table being used.
+
+For IPv4, either the interface name or one of it's assigned IPv4 addresses
+can be used. For IPv6, the interface name is used.
+
+For IPv6 link-local multicast or unicast sources, the incoming interface
+*must* be specified, as the route table cannot unambiguously determine
+which interface is intended just from the IPv6 link-local address.
+
+3.3 -4outif and -6outif interface selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The output interface for IPv4 or IPv6 multicast can be specified as an
+alternative to the host's multicast route table. For unicast destinations this
+option has no effect; the host's unicast route table will always be used.
+
+3.4 -4loop and -6loop
+~~~~~~~~~~~~~~~~~~~~~
+By default, for all multicast applications, multicast transmissions are also
+looped back to the host, so that local applications can also receive them.
+
+replicast *reverses* this default, as it is less likely that traffic
+transmitted by replicast will be of interest to local applications. The -4loop
+or -6loop command line options can be used to switch looping of multicast
+transmissions back on.
+
+3.5 -4ttl and -6hops defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default, for safety, the IPv4 TTL and IPv6 hop-count for multicast
+transmissions is 1, limiting the multicast traffic to the link the host is
+attached to. These options have no effect on the ttl or hop-count for unicast
+traffic; the host's unicast value will be used.
+
 
 
 

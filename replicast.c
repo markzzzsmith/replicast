@@ -349,7 +349,7 @@ const float replicast_version = 0.1;
 const char *program_name = "replicast";
 
 const size_t syslog_ident_len = 100;
-char syslog_ident[100];
+char syslog_ident[syslog_ident_len];
 
 struct sigaction sigterm_action;
 struct sigaction sigint_action;
@@ -507,14 +507,20 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%eth0:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%192.168.1.1:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4src 192.168.1.25:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4src 0.0.0.0:1234\n");
 
 	log_msg(LOG_SEV_INFO, "-6src <[addr]>[%<ifname>]:<port>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35]:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35%%eth0]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6src [fe80::1%%eth0]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6src [2001:db8::1]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6src [::]:1234\n");
+
 
 	log_msg(LOG_SEV_INFO, "-4dsts <addr>:<port>,<addr>:port,...\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4dsts 224.0.0.36:1234,");
-	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,224.0.0.38:9012\n");
+	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,192.168.1.1:9012\n");
 
 	log_msg(LOG_SEV_INFO, "-4ttl <ttl>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4ttl 32\n");
@@ -526,7 +532,7 @@ void log_prog_help(void)
 
 	log_msg(LOG_SEV_INFO, "-6dsts <[addr]>:<port>,<[addr]>:<port>,...\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6dsts [ff05::36]:1234,");
-	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[ff05::39]:9012\n");
+	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
 	log_msg(LOG_SEV_INFO, "-6hops <hop count>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6hops 16\n");
