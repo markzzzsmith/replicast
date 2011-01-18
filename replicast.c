@@ -534,8 +534,8 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -6dsts [ff05::36]:1234,");
 	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-6hops <hop count>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6hops 16\n");
+	log_msg(LOG_SEV_INFO, "-6mchops <hop count>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6mchops 16\n");
 
 	log_msg(LOG_SEV_INFO, "-6loop\n");
 
@@ -547,6 +547,7 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "SIGUSR1 - log current UDP datagram rx and tx ");
 	log_msg(LOG_SEV_INFO, "stats.\n");
 	log_msg(LOG_SEV_INFO, "SIGUSR2 - log program parameters.\n");
+
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -756,7 +757,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		CMDLINE_OPT_4OUTIF,
 		CMDLINE_OPT_4DSTS,
 		CMDLINE_OPT_6SRC,
-		CMDLINE_OPT_6HOPS,
+		CMDLINE_OPT_6MCHOPS,
 		CMDLINE_OPT_6LOOP,
 		CMDLINE_OPT_6OUTIF,
 		CMDLINE_OPT_6DSTS,
@@ -770,7 +771,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
 		{"4dsts", required_argument, NULL, CMDLINE_OPT_4DSTS},
 		{"6src", required_argument, NULL, CMDLINE_OPT_6SRC},
-		{"6hops", required_argument, NULL, CMDLINE_OPT_6HOPS},
+		{"6mchops", required_argument, NULL, CMDLINE_OPT_6MCHOPS},
 		{"6loop", no_argument, NULL, CMDLINE_OPT_6LOOP},
 		{"6outif", required_argument, NULL, CMDLINE_OPT_6OUTIF},
 		{"6dsts", required_argument, NULL, CMDLINE_OPT_6DSTS},
@@ -833,9 +834,9 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet6_rx_sock_mcgroup_set = 1;
 			prog_opts->inet6_rx_sock_mcgroup_str = optarg;
 			break;
-		case CMDLINE_OPT_6HOPS:
+		case CMDLINE_OPT_6MCHOPS:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6HOPS\n", __func__);
+				"CMDLINE_OPT_6MCHOPS\n", __func__);
 			prog_opts->inet6_tx_sock_mc_hops_set = 1;
 			prog_opts->inet6_tx_sock_mc_hops_str = optarg;
 			break;
@@ -977,7 +978,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 	struct in_addr in_intf_addr;	
 	enum inetaddr_errors aip_ptoh_err;
 	int tx_ttl;
-	int tx_hops;
+	int mc_hops;
 	unsigned int out_intf_idx;
 
 
@@ -1198,8 +1199,8 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 		}
 
 		if (prog_opts->inet6_tx_sock_mc_hops_set) {
-			tx_hops = atoi(prog_opts->inet6_tx_sock_mc_hops_str);
-			if ((tx_hops < 0) || (tx_hops > 255)) {
+			mc_hops = atoi(prog_opts->inet6_tx_sock_mc_hops_str);
+			if ((mc_hops < 0) || (mc_hops > 255)) {
 				log_debug_low("%s() return "
 					"VPOV_ERR_INET6_TX_HOPS_RANGE\n",
 						__func__);
@@ -1207,7 +1208,7 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				return VPOV_ERR_INET6_TX_HOPS_RANGE;
 			} else {
 				prog_parms->inet6_tx_sock_parms.mc_hops =
-								tx_hops;
+								mc_hops;
 			}
 		}
 
@@ -1484,7 +1485,7 @@ void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
 		log_msg(LOG_SEV_INFO, ", tx loop");
 	}
 
-	log_msg(LOG_SEV_INFO, ", hops %d\n", inet6_tx_parms->mc_hops);
+	log_msg(LOG_SEV_INFO, ", mc hops %d\n", inet6_tx_parms->mc_hops);
 
 	log_debug_med("%s() exit\n", __func__);
 
