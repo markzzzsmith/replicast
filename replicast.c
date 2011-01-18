@@ -47,7 +47,6 @@ enum VALIDATE_PROG_OPTS_VALS {
 	VPOV_ERR_SRC_PORT,
 	VPOV_ERR_DST_PORT,
 	VPOV_ERR_INET_DST_ADDR,
-	VPOV_ERR_INET_TX_UCTTL_RANGE,
 	VPOV_ERR_INET_TX_MCTTL_RANGE,
 	VPOV_ERR_INET_OUT_INTF,
 	VPOV_ERR_INET6_OUT_INTF,
@@ -68,7 +67,6 @@ enum OPT_ERR {
 	OE_SRC_PORT,
 	OE_DST_PORT,
 	OE_INET_DST_ADDR,
-	OE_INET_TX_UCTTL_RANGE,
 	OE_INET_TX_MCTTL_RANGE,
 	OE_INET_OUT_INTF,
 	OE_INET6_OUT_INTF,
@@ -102,7 +100,6 @@ struct inet_rx_sock_params {
 struct inet_tx_sock_params {
 	unsigned int mc_ttl;
 	unsigned int mc_loop;
-	unsigned int uc_ttl;
 	struct in_addr out_intf_addr;
 	struct sockaddr_in *dests;
 	unsigned int dests_num;	
@@ -150,8 +147,6 @@ struct program_options {
 
 	unsigned int inet_tx_sock_mc_ttl_set;
 	char *inet_tx_sock_mc_ttl_str;
-	unsigned int inet_tx_sock_uc_ttl_set;
-	char *inet_tx_sock_uc_ttl_str;
 	unsigned int inet_tx_sock_mc_loop_set;
 	unsigned int inet_tx_sock_out_intf_set;
 	char *inet_tx_sock_out_intf_str;
@@ -527,9 +522,6 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -4dsts 224.0.0.36:1234,");
 	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,192.168.1.1:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-4ttl <ttl>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4ttl 32\n");
-
 	log_msg(LOG_SEV_INFO, "-4mcttl <ttl>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4mcttl 32\n");
 
@@ -692,8 +684,6 @@ void init_prog_opts(struct program_options *prog_opts)
 
 	prog_opts->inet_tx_sock_mc_ttl_set = 0;
 	prog_opts->inet_tx_sock_mc_ttl_str = NULL;
-	prog_opts->inet_tx_sock_uc_ttl_set = 0;
-	prog_opts->inet_tx_sock_uc_ttl_str = NULL;
 	prog_opts->inet_tx_sock_mc_loop_set = 0;
 	prog_opts->inet_tx_sock_out_intf_set = 0;
 	prog_opts->inet_tx_sock_out_intf_str = NULL;
@@ -731,7 +721,6 @@ void init_prog_parms(struct program_parameters *prog_parms)
 	prog_parms->inet_rx_sock_parms.in_intf_addr.s_addr = ntohl(INADDR_ANY);
 
 	prog_parms->inet_tx_sock_parms.mc_ttl = 1;
-	prog_parms->inet_tx_sock_parms.uc_ttl = 0;
 	prog_parms->inet_tx_sock_parms.mc_loop = 0;
 	prog_parms->inet_tx_sock_parms.out_intf_addr.s_addr = ntohl(INADDR_ANY);
 	prog_parms->inet_tx_sock_parms.dests = NULL;
@@ -762,7 +751,6 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		CMDLINE_OPT_HELP = 1,
 		CMDLINE_OPT_NODAEMON,
 		CMDLINE_OPT_4SRC,
-		CMDLINE_OPT_4UCTTL,
 		CMDLINE_OPT_4MCTTL,
 		CMDLINE_OPT_4LOOP,
 		CMDLINE_OPT_4OUTIF,
@@ -777,7 +765,6 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
 		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
 		{"4src", required_argument, NULL, CMDLINE_OPT_4SRC},
-		{"4ttl", required_argument, NULL, CMDLINE_OPT_4UCTTL},
 		{"4mcttl", required_argument, NULL, CMDLINE_OPT_4MCTTL},
 		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
 		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
@@ -816,12 +803,6 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 				"CMDLINE_OPT_4SRC\n", __func__);
 			prog_opts->inet_rx_sock_mcgroup_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_str = optarg;
-			break;
-		case CMDLINE_OPT_4UCTTL:
-			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4UCTTL\n", __func__);
-			prog_opts->inet_tx_sock_uc_ttl_set = 1;
-			prog_opts->inet_tx_sock_uc_ttl_str = optarg;
 			break;
 		case CMDLINE_OPT_4MCTTL:
 			log_debug_low("%s: getopt_long_only() = "
@@ -1140,22 +1121,6 @@ enum VALIDATE_PROG_OPTS_VALS validate_prog_opts_vals(
 				prog_parms->inet_tx_sock_parms.mc_dests_num);
 		}
 
-		if (prog_opts->inet_tx_sock_uc_ttl_set) {
-			log_debug_low("%s() prog_opts->", __func__);
-			log_debug_low("inet_tx_sock_uc_ttl_set\n");
-			tx_ttl = atoi(prog_opts->inet_tx_sock_uc_ttl_str);
-			if ((tx_ttl < 0) || (tx_ttl > 255)) {
-				log_debug_low("%s() return "
-					"VPOV_ERR_INET_TX_UCTTL_RANGE\n",
-						__func__);
-				log_debug_med("%s() exit\n", __func__);
-				return VPOV_ERR_INET_TX_UCTTL_RANGE;
-			} else {
-				prog_parms->inet_tx_sock_parms.uc_ttl =
-									tx_ttl;
-			}
-		}
-
 		if (prog_opts->inet_tx_sock_mc_ttl_set) {
 			log_debug_low("%s() prog_opts->", __func__);
 			log_debug_low("inet_tx_sock_mc_ttl_set\n");
@@ -1301,9 +1266,6 @@ int validate_prog_opts_values(const struct program_options *prog_opts,
 		break;
 	case VPOV_ERR_INET_DST_ADDR:
 		log_opt_error(OE_INET_DST_ADDR, NULL);
-		break;
-	case VPOV_ERR_INET_TX_UCTTL_RANGE:
-		log_opt_error(OE_INET_TX_UCTTL_RANGE, NULL);
 		break;
 	case VPOV_ERR_INET_TX_MCTTL_RANGE:
 		log_opt_error(OE_INET_TX_MCTTL_RANGE, NULL);
@@ -1475,11 +1437,6 @@ void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms)
 		log_msg(LOG_SEV_INFO, ", tx loop");
 	}
 
-	if ((inet_tx_parms->mc_dests_num != inet_tx_parms->dests_num) && 
-	    (inet_tx_parms->uc_ttl > 0)) {
-		log_msg(LOG_SEV_INFO, ", ttl %d", inet_tx_parms->uc_ttl);
-	}
-
 	log_msg(LOG_SEV_INFO, ", mc ttl %d\n", inet_tx_parms->mc_ttl);
 
 	log_debug_med("%s() exit\n", __func__);
@@ -1571,10 +1528,6 @@ void log_opt_error(enum OPT_ERR option_err,
 		break;
 	case OE_INET_DST_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid IPv4 destination address.\n");
-		break;
-	case OE_INET_TX_UCTTL_RANGE:
-		log_msg(LOG_SEV_ERR, "Invalid unicast IPv4 transmit ");
-		log_msg(LOG_SEV_ERR, "time-to-live.\n");
 		break;
 	case OE_INET_TX_MCTTL_RANGE:
 		log_msg(LOG_SEV_ERR, "Invalid multicast IPv4 transmit ");
@@ -2409,19 +2362,6 @@ int open_inet_tx_sock(const struct inet_tx_sock_params *sock_parms)
 			return -1;
 		}
  
-	}
-
-	if (sock_parms->mc_dests_num != sock_parms->dests_num) {
-
-		if (sock_parms->uc_ttl > 0) {
-			ttl = sock_parms->mc_ttl & 0xff;
-			ret = setsockopt(sock_fd, IPPROTO_IP, IP_TTL, &ttl,
-				sizeof(ttl));	
-			if (ret == -1) {
-				return -1;
-			}
-		}
-
 	}
 
 	log_debug_med("%s() exit\n", __func__);
