@@ -2,3 +2,11 @@
 o handle get_opt_long() missing option variables - manual page not clear
 
 o shorten some of the validate options routines
+
+o Source Specific Multicast support
+
+o Generic rather than IPv4 and IPv6 multicast setsockopt parameters
+
+o IPv4 multicast group embedded in IPv6 multicast group address support,
+  short hand for specifying 1 to 1 IPv4 to IPv6 replication specification
+
