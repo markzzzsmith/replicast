@@ -503,23 +503,23 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "-help\n");
 	log_msg(LOG_SEV_INFO, "-nodaemon\n");
 
-	log_msg(LOG_SEV_INFO, "-4src <addr>[%<ifname>|<ifaddr>]:<port>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%eth0:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4src 224.0.0.35%%192.168.1.1:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4src 192.168.1.25:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4src 0.0.0.0:1234\n");
+	log_msg(LOG_SEV_INFO, "-4in <addr>[%<ifname>|<ifaddr>]:<port>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4in 224.0.0.35:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4in 224.0.0.35%%eth0:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4in 224.0.0.35%%192.168.1.1:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4in 192.168.1.25:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4in 0.0.0.0:1234\n");
 
-	log_msg(LOG_SEV_INFO, "-6src <[addr]>[%<ifname>]:<port>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35]:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6src [ff05::35%%eth0]:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6src [fe80::1%%eth0]:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6src [2001:db8::1]:1234\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6src [::]:1234\n");
+	log_msg(LOG_SEV_INFO, "-6in <[addr]>[%<ifname>]:<port>\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6in [ff05::35]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6in [ff05::35%%eth0]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6in [fe80::1%%eth0]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6in [2001:db8::1]:1234\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6in [::]:1234\n");
 
 
-	log_msg(LOG_SEV_INFO, "-4dsts <addr>:<port>,<addr>:port,...\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4dsts 224.0.0.36:1234,");
+	log_msg(LOG_SEV_INFO, "-4out <addr>:<port>,<addr>:port,...\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4out 224.0.0.36:1234,");
 	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,192.168.1.1:9012\n");
 
 	log_msg(LOG_SEV_INFO, "-4mcttl <ttl>\n");
@@ -530,8 +530,8 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "-4outif <ifname>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4outif eth0\n");
 
-	log_msg(LOG_SEV_INFO, "-6dsts <[addr]>:<port>,<[addr]>:<port>,...\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6dsts [ff05::36]:1234,");
+	log_msg(LOG_SEV_INFO, "-6out <[addr]>:<port>,<[addr]>:<port>,...\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6out [ff05::36]:1234,");
 	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
 	log_msg(LOG_SEV_INFO, "-6mchops <hop count>\n");
@@ -751,12 +751,12 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
 		CMDLINE_OPT_NODAEMON,
-		CMDLINE_OPT_4SRC,
+		CMDLINE_OPT_4IN,
 		CMDLINE_OPT_4MCTTL,
 		CMDLINE_OPT_4LOOP,
 		CMDLINE_OPT_4OUTIF,
 		CMDLINE_OPT_4DSTS,
-		CMDLINE_OPT_6SRC,
+		CMDLINE_OPT_6IN,
 		CMDLINE_OPT_6MCHOPS,
 		CMDLINE_OPT_6LOOP,
 		CMDLINE_OPT_6OUTIF,
@@ -765,16 +765,16 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	struct option cmdline_opts[] = {
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
 		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
-		{"4src", required_argument, NULL, CMDLINE_OPT_4SRC},
+		{"4in", required_argument, NULL, CMDLINE_OPT_4IN},
 		{"4mcttl", required_argument, NULL, CMDLINE_OPT_4MCTTL},
 		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
 		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
-		{"4dsts", required_argument, NULL, CMDLINE_OPT_4DSTS},
-		{"6src", required_argument, NULL, CMDLINE_OPT_6SRC},
+		{"4out", required_argument, NULL, CMDLINE_OPT_4DSTS},
+		{"6in", required_argument, NULL, CMDLINE_OPT_6IN},
 		{"6mchops", required_argument, NULL, CMDLINE_OPT_6MCHOPS},
 		{"6loop", no_argument, NULL, CMDLINE_OPT_6LOOP},
 		{"6outif", required_argument, NULL, CMDLINE_OPT_6OUTIF},
-		{"6dsts", required_argument, NULL, CMDLINE_OPT_6DSTS},
+		{"6out", required_argument, NULL, CMDLINE_OPT_6DSTS},
 		{0, 0, 0, 0}
 	};
 	enum CMDLINE_OPTS ret;
@@ -799,9 +799,9 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 				"CMDLINE_OPT_NODAEMON\n", __func__);
 			prog_opts->no_daemon_set = 1;
 			break;
-		case CMDLINE_OPT_4SRC:
+		case CMDLINE_OPT_4IN:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4SRC\n", __func__);
+				"CMDLINE_OPT_4IN\n", __func__);
 			prog_opts->inet_rx_sock_mcgroup_set = 1;
 			prog_opts->inet_rx_sock_mcgroup_str = optarg;
 			break;
@@ -828,9 +828,9 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet_tx_sock_dests_set = 1;
 			prog_opts->inet_tx_sock_dests_str = optarg;
 			break;
-		case CMDLINE_OPT_6SRC:
+		case CMDLINE_OPT_6IN:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6SRC\n", __func__);
+				"CMDLINE_OPT_6IN\n", __func__);
 			prog_opts->inet6_rx_sock_mcgroup_set = 1;
 			prog_opts->inet6_rx_sock_mcgroup_str = optarg;
 			break;
