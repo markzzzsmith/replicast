@@ -137,61 +137,47 @@ command. An interface name can be specified e.g.
 	ip maddr show dev eth0
 
 
-4.3 Forcing MLD/IGMP version under Linux
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4.3 Forcing IPv4 IGMP or IPv6 MLD version under Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Linux kernels have default IGMP and MLD versions of 3 and 2 respectively. There
+may be instances where these versions aren't supported by IGMP or MLD receivers
+on the local link, such as multicast routers.
+
+To override the IPv4 IGMP version used on an interface, specify the version to
+use using the 'force_igmp_version' file under:
+
+/proc/sys/net/ipv4/conf/<interface>
+
+For IPv6 MLD, specify the version to use using the 'force_mld_version' file
+under:
+
+/proc/sys/net/ipv6/conf/<interface>
+
+The value 0 restores the IGMP or MLD version back to the kernel's default.
+
 
 4.4 Permitting multicast through the Linux firewall
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+iptables or ip6tables don't treat multicast traffic as special, although there
+are some options/match extensions which do match on packet type.
+
+For example, to accept all incoming IPv4 multicast traffic arriving on eth0:
+
+iptables -A INPUT -d 224/4 -i eth0 -j ACCEPT
+
+Similarly, to accept incoming IPv6 multicast traffic destined to ff02::1234:
+
+ip6tables -A INPUT -d ff02::1234 -j ACCEPT
+
 4.5 VLC
 ~~~~~~~
+(This section needs to be cleaned up a bit)
 
-1. IPv4 Static Routes for Multicast Input and Output Interface Selection
-
-e.g.
-
-	'ip route 224/4 dev eth0'
-
-	'ip route 224.4.4.4/32 dev eth1'
-	'ip route 224.5.5.5/32 dev eth2'
-
-
-N.B. outbound interface must have an IPv4 address
-
-
-2. IPv6 Static Routes for Multicast Input and Output Interface Selection
-
-
-e.g.
-
-	'ip -6 route ff05::/16 dev eth0 table local'
-	'ip -6 route ff02::5/128 dev eth1 table local'
-
-
-to view static multicast routes
-
-	'ip -6 route show table local'
-
-
-N.B. outbound interface must have a global IPv6 address if the multicast
-destination has a larger scope than link local
-	
-
-3. Misc Notes
-
-3.1 IPv6 Multicast in VLC
-
-For streaming over multicast IPv6 -
+4.5.1. Multicast IPv6 Streaming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For non-link local multicast destinations -
-
-create multicast route in local table, specifying output interface e.g.
-
-ip -6 route add ff01::15/128 dev lo
-
-[mark@opy ~]$ sudo ip -6 route show table local | grep ff01
-local ff01::15 dev lo  metric 1024  mtu 16436 advmss 16376 hoplimit 4294967295
-[mark@opy ~]$
 
 Then specify destination multicast address in VLC output URL, escaping square breackets
 
@@ -216,6 +202,7 @@ URL format in GUI for watching streams is 'udp://@[IPv6 MC address]:<port>' - no
 
 Address format when sending streams is e.g. "[ff05::30]", with corresponding route. For link local multicast destinations, specify outgoing interface e.g. [ff02::30%eth0]
 
-3.2 IPv4 Multicast in VLC
+4.5.2. Multicast IPv4 Streaming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 URL format in GUI is 'udp://@<group address>` 
