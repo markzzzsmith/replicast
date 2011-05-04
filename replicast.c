@@ -1,6 +1,23 @@
 /*
- * replicast - replicate an incoming multicast stream to multiple destination
- *	       multicast streams
+ * replicast - replicate an incoming multicast or unicast stream to multiple
+ * destination multicast or unicast streams
+ *
+ * Copyright (C) 2011 Mark Smith <markzzzsmith@yahoo.com.au>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+ * USA. 
  *
  */
 
@@ -522,25 +539,28 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -4out 224.0.0.36:1234,");
 	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,192.168.1.1:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-4mcttl <ttl>\n");
+	log_msg(LOG_SEV_INFO, "-4mcttl <ttl> - outgoing multicast TTL\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4mcttl 32\n");
 
-	log_msg(LOG_SEV_INFO, "-4loop\n");
+	log_msg(LOG_SEV_INFO, "-4mcloop - loop multicast to localhost\n");
 
-	log_msg(LOG_SEV_INFO, "-4outif <ifname>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -4outif eth0\n");
+	log_msg(LOG_SEV_INFO, "-4mcoutif <ifname> - multicast output");
+	log_msg(LOG_SEV_INFO, " interface\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -4mcoutif eth0\n");
 
 	log_msg(LOG_SEV_INFO, "-6out <[addr]>:<port>,<[addr]>:<port>,...\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6out [ff05::36]:1234,");
 	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-6mchops <hop count>\n");
+	log_msg(LOG_SEV_INFO, "-6mchops <hop count> - outgoing multicast");
+	log_msg(LOG_SEV_INFO, " hops\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6mchops 16\n");
 
-	log_msg(LOG_SEV_INFO, "-6loop\n");
+	log_msg(LOG_SEV_INFO, "-6mcloop - loop multicast to localhost\n");
 
-	log_msg(LOG_SEV_INFO, "-6outif <ifname>\n");
-	log_msg(LOG_SEV_INFO, "\te.g. -6outif eth0\n");
+	log_msg(LOG_SEV_INFO, "-6mcoutif <ifname> - multicast output");
+	log_msg(LOG_SEV_INFO, " interface\n");
+	log_msg(LOG_SEV_INFO, "\te.g. -6mcoutif eth0\n");
 
 	log_msg(LOG_SEV_INFO, "\nsignals:\n");
 
@@ -753,13 +773,13 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		CMDLINE_OPT_NODAEMON,
 		CMDLINE_OPT_4IN,
 		CMDLINE_OPT_4MCTTL,
-		CMDLINE_OPT_4LOOP,
-		CMDLINE_OPT_4OUTIF,
+		CMDLINE_OPT_4MCLOOP,
+		CMDLINE_OPT_4MCOUTIF,
 		CMDLINE_OPT_4DSTS,
 		CMDLINE_OPT_6IN,
 		CMDLINE_OPT_6MCHOPS,
-		CMDLINE_OPT_6LOOP,
-		CMDLINE_OPT_6OUTIF,
+		CMDLINE_OPT_6MCLOOP,
+		CMDLINE_OPT_6MCOUTIF,
 		CMDLINE_OPT_6DSTS,
 	};
 	struct option cmdline_opts[] = {
@@ -767,13 +787,13 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
 		{"4in", required_argument, NULL, CMDLINE_OPT_4IN},
 		{"4mcttl", required_argument, NULL, CMDLINE_OPT_4MCTTL},
-		{"4loop", no_argument, NULL, CMDLINE_OPT_4LOOP},
-		{"4outif", required_argument, NULL, CMDLINE_OPT_4OUTIF},
+		{"4mcloop", no_argument, NULL, CMDLINE_OPT_4MCLOOP},
+		{"4mcoutif", required_argument, NULL, CMDLINE_OPT_4MCOUTIF},
 		{"4out", required_argument, NULL, CMDLINE_OPT_4DSTS},
 		{"6in", required_argument, NULL, CMDLINE_OPT_6IN},
 		{"6mchops", required_argument, NULL, CMDLINE_OPT_6MCHOPS},
-		{"6loop", no_argument, NULL, CMDLINE_OPT_6LOOP},
-		{"6outif", required_argument, NULL, CMDLINE_OPT_6OUTIF},
+		{"6mcloop", no_argument, NULL, CMDLINE_OPT_6MCLOOP},
+		{"6mcoutif", required_argument, NULL, CMDLINE_OPT_6MCOUTIF},
 		{"6out", required_argument, NULL, CMDLINE_OPT_6DSTS},
 		{0, 0, 0, 0}
 	};
@@ -811,14 +831,14 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet_tx_sock_mc_ttl_set = 1;
 			prog_opts->inet_tx_sock_mc_ttl_str = optarg;
 			break;
-		case CMDLINE_OPT_4LOOP:
+		case CMDLINE_OPT_4MCLOOP:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4LOOP\n", __func__);
+				"CMDLINE_OPT_4MCLOOP\n", __func__);
 			prog_opts->inet_tx_sock_mc_loop_set = 1;
 			break;
-		case CMDLINE_OPT_4OUTIF:
+		case CMDLINE_OPT_4MCOUTIF:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_4OUTIF\n", __func__);
+				"CMDLINE_OPT_4MCOUTIF\n", __func__);
 			prog_opts->inet_tx_sock_out_intf_set = 1;
 			prog_opts->inet_tx_sock_out_intf_str = optarg;
 			break;
@@ -840,14 +860,14 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 			prog_opts->inet6_tx_sock_mc_hops_set = 1;
 			prog_opts->inet6_tx_sock_mc_hops_str = optarg;
 			break;
-		case CMDLINE_OPT_6LOOP:
+		case CMDLINE_OPT_6MCLOOP:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6LOOP\n", __func__);
+				"CMDLINE_OPT_6MCLOOP\n", __func__);
 			prog_opts->inet6_tx_sock_mc_loop_set = 1;
 			break;
-		case CMDLINE_OPT_6OUTIF:
+		case CMDLINE_OPT_6MCOUTIF:
 			log_debug_low("%s: getopt_long_only() = "
-				"CMDLINE_OPT_6OUTIF\n", __func__);
+				"CMDLINE_OPT_6MCOUTIF\n", __func__);
 			prog_opts->inet6_tx_sock_out_intf_set = 1;
 			prog_opts->inet6_tx_sock_out_intf_str = optarg;
 			break;
@@ -1506,13 +1526,13 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Unknown option.\n");
 		break;
 	case OE_NO_SRC_ADDR:
-		log_msg(LOG_SEV_ERR, "No source address specified.\n");
+		log_msg(LOG_SEV_ERR, "No incoming address specified.\n");
 		break;
 	case OE_MULTI_SRC_ADDRS:
-		log_msg(LOG_SEV_ERR, "Too many source addresses.\n");
+		log_msg(LOG_SEV_ERR, "Too many incoming addresses.\n");
 		break;
 	case OE_NO_DST_ADDRS:
-		log_msg(LOG_SEV_ERR, "No destination address(es) ");
+		log_msg(LOG_SEV_ERR, "No outgoing address(es) ");
 		log_msg(LOG_SEV_ERR, "specified.\n");
 		break;
 	case OE_SRC_GRP_ADDR:
@@ -1535,10 +1555,12 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "time-to-live.\n");
 		break;
 	case OE_INET_OUT_INTF:
-		log_msg(LOG_SEV_ERR, "Invalid IPv4 output interface.\n");
+		log_msg(LOG_SEV_ERR, "Invalid IPv4 multicast output");
+		log_msg(LOG_SEV_ERR, " interface.\n");
 		break;
 	case OE_INET6_OUT_INTF:
-		log_msg(LOG_SEV_ERR, "Invalid IPv6 output interface.\n");
+		log_msg(LOG_SEV_ERR, "Invalid IPv6 multicast output");
+		log_msg(LOG_SEV_ERR, " interface.\n");
 		break;
 	case OE_INET6_DST_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination address.\n");

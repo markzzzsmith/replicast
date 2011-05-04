@@ -128,11 +128,22 @@ ip -6 route add ff05::30/128 dev eth1 table local
 4.2 Viewing multicast group membership under Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+IPv4, IPv6 and link layer multicast memberships are viewed using the 
 
-4.3 Permitting multicast through the Linux firewall
+	ip maddr show
+
+command. An interface name can be specified e.g.
+
+	ip maddr show dev eth0
+
+
+4.3 Forcing MLD/IGMP version under Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+4.4 Permitting multicast through the Linux firewall
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-4.3 VLC
+4.5 VLC
 ~~~~~~~
 
 1. IPv4 Static Routes for Multicast Input and Output Interface Selection
@@ -165,6 +176,7 @@ to view static multicast routes
 N.B. outbound interface must have a global IPv6 address if the multicast
 destination has a larger scope than link local
 	
+
 3. Misc Notes
 
 3.1 IPv6 Multicast in VLC

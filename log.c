@@ -1,11 +1,27 @@
 /*
  * Message logging routines
  *
+ * Copyright (C) 2011 Mark Smith <markzzzsmith@yahoo.com.au>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+ * USA. 
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <syslog.h>
 
@@ -126,6 +142,24 @@ void log_msg_exit(const enum log_msg_severity msg_severity,
 	if (exit_func != NULL) {
 		(*exit_func)(exit_ptr);
 	}
+
+}
+
+
+void log_msg_abort(const enum log_msg_severity msg_severity,
+	           const char *fmt,
+                   ...)
+{
+	va_list fmt_args;
+
+
+	va_start(fmt_args, fmt);
+
+	log_msg_va(msg_severity, fmt, fmt_args);
+
+	va_end(fmt_args);
+
+	abort();
 
 }
 
