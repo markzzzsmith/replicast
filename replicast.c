@@ -45,6 +45,7 @@ enum GLOBAL_DEFS {
 
 enum VALIDATE_PROG_OPTS {
 	VPO_HELP,
+	VPO_LICENSE,
 	VPO_ERR_UNKNOWN_OPT,
 	VPO_ERR_NO_SRC_ADDR,
 	VPO_ERR_MULTI_SRC_ADDRS,
@@ -97,6 +98,7 @@ enum OPT_ERR {
 enum REPLICAST_MODE {
 	RCMODE_UNKNOWN,
 	RCMODE_HELP,
+	RCMODE_LICENSE,
 	RCMODE_ERROR,
 	RCMODE_INET_TO_INET,
 	RCMODE_INET_TO_INET6,
@@ -154,6 +156,7 @@ struct packet_counters {
 
 struct program_options {
 	unsigned int help_set;
+	unsigned int license_set;
 	unsigned int unknown_opt_set;
 	char *unknown_opt_str;
 
@@ -194,6 +197,8 @@ struct program_parameters {
 
 
 void log_prog_help(void);
+
+void log_prog_license(void);
 
 void get_prog_parms(int argc, char *argv[],
 		    struct program_parameters *prog_parms,
@@ -399,6 +404,11 @@ int main(int argc, char *argv[])
 		log_prog_banner();
 		log_prog_help();
 		break;
+	case RCMODE_LICENSE:
+		log_debug_med("%s() rc_mode = RCMODE_LICENSE\n", __func__);
+		log_prog_banner();
+		log_prog_license();
+		break;
 	case RCMODE_INET_TO_INET:
 		log_debug_med("%s() rc_mode = RCMODE_INET_TO_INET\n", __func__);
 		install_usr_signal_handlers();
@@ -518,6 +528,7 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\ncommand line options:\n");
 
 	log_msg(LOG_SEV_INFO, "-help\n");
+	log_msg(LOG_SEV_INFO, "-license\n");
 	log_msg(LOG_SEV_INFO, "-nodaemon\n");
 
 	log_msg(LOG_SEV_INFO, "-4in <addr>[%<ifname>|<ifaddr>]:<port>\n");
@@ -574,6 +585,62 @@ void log_prog_help(void)
 }
 
 
+void log_prog_license(void)
+{
+
+
+	log_debug_med("%s() entry\n", __func__);
+
+	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to ");
+	log_msg(LOG_SEV_INFO, "IPv4 and/or IPv6 destinations.\n");
+
+	log_msg(LOG_SEV_INFO, "\n");
+
+	log_msg(LOG_SEV_INFO, "Copyright (C) 2011 Mark Smith ");
+	log_msg(LOG_SEV_INFO, "<markzzzsmith@yahoo.com.au>\n");
+
+	log_msg(LOG_SEV_INFO, "\n");
+
+	log_msg(LOG_SEV_INFO, "This program is free software; you can "
+		"redistribute it and/or\n");
+
+	log_msg(LOG_SEV_INFO, "modify it under the terms of the GNU General "
+		"Public License.\n");
+
+	log_msg(LOG_SEV_INFO, "as published by the Free Software Foundation; "
+		"Version 2 of the\n");
+
+	log_msg(LOG_SEV_INFO, "License.\n");
+
+	log_msg(LOG_SEV_INFO, "\n");
+
+	log_msg(LOG_SEV_INFO, "This program is distributed in the hope that "
+		"it will be useful,\n");
+
+	log_msg(LOG_SEV_INFO, "but WITHOUT ANY WARRANTY; without even the "
+		"implied warranty of\n");
+
+	log_msg(LOG_SEV_INFO, "MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+		"PURPOSE.  See the\n");
+
+	log_msg(LOG_SEV_INFO, "GNU General Public License for more details.\n");
+
+	log_msg(LOG_SEV_INFO, "\n");
+
+	log_msg(LOG_SEV_INFO, "You should have received a copy of the GNU "
+		"General Public License\n");
+
+	log_msg(LOG_SEV_INFO, "along with this program; if not, write to "
+		"the Free Software\n");
+
+	log_msg(LOG_SEV_INFO, "Foundation, Inc., 51 Franklin Street, "
+		"Fifth Floor, Boston, MA  02110-1301, USA.\n");
+
+	log_debug_med("%s() exit\n", __func__);
+
+}
+
+
 void get_prog_parms(int argc, char *argv[],
 	       struct program_parameters *prog_parms,
 	       char err_str[],
@@ -595,6 +662,9 @@ void get_prog_parms(int argc, char *argv[],
 	switch (vpo) {
 	case VPO_HELP:
 		prog_parms->rc_mode = RCMODE_HELP;
+		break;
+	case VPO_LICENSE:
+		prog_parms->rc_mode = RCMODE_LICENSE;
 		break;
 	case VPO_ERR_UNKNOWN_OPT:
 		prog_parms->rc_mode = RCMODE_ERROR;
@@ -695,6 +765,8 @@ void init_prog_opts(struct program_options *prog_opts)
 
 	prog_opts->help_set = 0;
 
+	prog_opts->license_set = 0;
+
 	prog_opts->unknown_opt_set = 0;
 	prog_opts->unknown_opt_str = NULL;
 
@@ -770,6 +842,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 {
 	enum CMDLINE_OPTS {
 		CMDLINE_OPT_HELP = 1,
+		CMDLINE_OPT_LICENSE,
 		CMDLINE_OPT_NODAEMON,
 		CMDLINE_OPT_4IN,
 		CMDLINE_OPT_4MCTTL,
@@ -784,6 +857,7 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 	};
 	struct option cmdline_opts[] = {
 		{"help", no_argument, NULL, CMDLINE_OPT_HELP},
+		{"license", no_argument, NULL, CMDLINE_OPT_LICENSE},
 		{"nodaemon", no_argument, NULL, CMDLINE_OPT_NODAEMON},
 		{"4in", required_argument, NULL, CMDLINE_OPT_4IN},
 		{"4mcttl", required_argument, NULL, CMDLINE_OPT_4MCTTL},
@@ -806,13 +880,18 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 
 	ret = getopt_long_only(argc, argv, ":", cmdline_opts, NULL);
 	log_debug_low("%s: getopt_long_only() = %d, %c\n", __func__, ret, ret);
-	while ((ret != -1) && (!prog_opts->help_set) &&
-						(!prog_opts->unknown_opt_set)) {
+	while ((ret != -1) && (!prog_opts->help_set)
+		&& (!prog_opts->license_set) && (!prog_opts->unknown_opt_set)) {
 		switch (ret) {
 		case CMDLINE_OPT_HELP:
 			log_debug_low("%s: getopt_long_only() = "
 				"CMDLINE_OPT_HELP\n", __func__);
 			prog_opts->help_set = 1;
+			break;
+		case CMDLINE_OPT_LICENSE:
+			log_debug_low("%s: getopt_long_only() = "
+				"CMDLINE_OPT_LICENSE\n", __func__);
+			prog_opts->license_set = 1;
 			break;
 		case CMDLINE_OPT_NODAEMON:
 			log_debug_low("%s: getopt_long_only() = "
@@ -910,6 +989,12 @@ enum VALIDATE_PROG_OPTS validate_prog_opts(
 		log_debug_low("%s() return VPO_HELP\n", __func__);
 		log_debug_med("%s() exit\n", __func__);
 		return VPO_HELP;
+	}
+
+	if (prog_opts->license_set) {
+		log_debug_low("%s() return VPO_LICENSE\n", __func__);
+		log_debug_med("%s() exit\n", __func__);
+		return VPO_LICENSE;
 	}
 	
 	if (prog_opts->unknown_opt_set) {
