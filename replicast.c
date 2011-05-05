@@ -371,7 +371,7 @@ const float replicast_version = 0.1;
 const char *program_name = "replicast";
 
 const size_t syslog_ident_len = 100;
-char syslog_ident[syslog_ident_len];
+char syslog_ident[100];
 
 struct sigaction sigterm_action;
 struct sigaction sigint_action;
@@ -522,8 +522,8 @@ void log_prog_help(void)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to ");
-	log_msg(LOG_SEV_INFO, "IPv4 and/or IPv6 destinations.\n");
+	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to "
+		"IPv4 and/or IPv6 destinations.\n");
 
 	log_msg(LOG_SEV_INFO, "\ncommand line options:\n");
 
@@ -538,7 +538,7 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -4in 192.168.1.25:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4in 0.0.0.0:1234\n");
 
-	log_msg(LOG_SEV_INFO, "-6in <[addr]>[%<ifname>]:<port>\n");
+	log_msg(LOG_SEV_INFO, "-6in <\\[addr\\]>[%<ifname>]:<port>\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6in [ff05::35]:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6in [ff05::35%%eth0]:1234\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6in [fe80::1%%eth0]:1234\n");
@@ -555,30 +555,30 @@ void log_prog_help(void)
 
 	log_msg(LOG_SEV_INFO, "-4mcloop - loop multicast to localhost\n");
 
-	log_msg(LOG_SEV_INFO, "-4mcoutif <ifname> - multicast output");
-	log_msg(LOG_SEV_INFO, " interface\n");
+	log_msg(LOG_SEV_INFO, "-4mcoutif <ifname> - multicast output "
+		"interface\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4mcoutif eth0\n");
 
-	log_msg(LOG_SEV_INFO, "-6out <[addr]>:<port>,<[addr]>:<port>,...\n");
+	log_msg(LOG_SEV_INFO, "-6out <\\[addr\\]>:<port>,<\\[addr\\]>:<port>,"
+		"...\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6out [ff05::36]:1234,");
 	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-6mchops <hop count> - outgoing multicast");
-	log_msg(LOG_SEV_INFO, " hops\n");
+	log_msg(LOG_SEV_INFO, "-6mchops <hop count> - outgoing multicast"
+		" hops\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6mchops 16\n");
 
 	log_msg(LOG_SEV_INFO, "-6mcloop - loop multicast to localhost\n");
 
-	log_msg(LOG_SEV_INFO, "-6mcoutif <ifname> - multicast output");
-	log_msg(LOG_SEV_INFO, " interface\n");
+	log_msg(LOG_SEV_INFO, "-6mcoutif <ifname> - multicast output"
+		" interface\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6mcoutif eth0\n");
 
 	log_msg(LOG_SEV_INFO, "\nsignals:\n");
 
-	log_msg(LOG_SEV_INFO, "SIGUSR1 - log current UDP datagram rx and tx ");
-	log_msg(LOG_SEV_INFO, "stats.\n");
+	log_msg(LOG_SEV_INFO, "SIGUSR1 - log current UDP datagram rx and tx "
+		"stats.\n");
 	log_msg(LOG_SEV_INFO, "SIGUSR2 - log program parameters.\n");
-
 
 	log_debug_med("%s() exit\n", __func__);
 
@@ -591,8 +591,8 @@ void log_prog_license(void)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to ");
-	log_msg(LOG_SEV_INFO, "IPv4 and/or IPv6 destinations.\n");
+	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to "
+		"IPv4 and/or IPv6 destinations.\n");
 
 	log_msg(LOG_SEV_INFO, "\n");
 
@@ -955,10 +955,6 @@ void get_prog_opts_cmdline(int argc, char *argv[],
 				"CMDLINE_OPT_6DSTS\n", __func__);
 			prog_opts->inet6_tx_sock_dests_set = 1;
 			prog_opts->inet6_tx_sock_dests_str = optarg;
-			break;
-		case ':':
-			log_debug_low("%s: getopt_long_only() = missing "
-				"option parameter\n", __func__);
 			break;
 		default:
 			log_debug_low("%s: getopt_long_only() = "
