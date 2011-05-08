@@ -1502,8 +1502,8 @@ void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
 
 void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms)
 {
+	char ap_str[INET_ADDRSTRLEN + 1 + 5 + 1];
 	const unsigned int ap_str_size = INET_ADDRSTRLEN + 1 + 5 + 1;
-	char ap_str[ap_str_size];
 	unsigned int dest_num = 0;
 	char out_intf_addr_str[INET_ADDRSTRLEN];
 
@@ -1550,8 +1550,8 @@ void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms)
 void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
 								*inet6_tx_parms)
 {
+	char ap_str[1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1];
 	const unsigned int ap_str_size = 1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1;
-	char ap_str[ap_str_size];
 	unsigned int dest_num = 0;
 	char out_intf_name[IFNAMSIZ];
 
@@ -1614,8 +1614,7 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Too many incoming addresses.\n");
 		break;
 	case OE_NO_DST_ADDRS:
-		log_msg(LOG_SEV_ERR, "No outgoing address(es) ");
-		log_msg(LOG_SEV_ERR, "specified.\n");
+		log_msg(LOG_SEV_ERR, "No outgoing address(es) specified.\n");
 		break;
 	case OE_SRC_GRP_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid traffic source.\n");
@@ -1633,16 +1632,16 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Invalid IPv4 destination address.\n");
 		break;
 	case OE_INET_TX_MCTTL_RANGE:
-		log_msg(LOG_SEV_ERR, "Invalid multicast IPv4 transmit ");
-		log_msg(LOG_SEV_ERR, "time-to-live.\n");
+		log_msg(LOG_SEV_ERR, "Invalid multicast IPv4 transmit "
+			"time-to-live.\n");
 		break;
 	case OE_INET_OUT_INTF:
-		log_msg(LOG_SEV_ERR, "Invalid IPv4 multicast output");
-		log_msg(LOG_SEV_ERR, " interface.\n");
+		log_msg(LOG_SEV_ERR, "Invalid IPv4 multicast output "
+			"interface.\n");
 		break;
 	case OE_INET6_OUT_INTF:
-		log_msg(LOG_SEV_ERR, "Invalid IPv6 multicast output");
-		log_msg(LOG_SEV_ERR, " interface.\n");
+		log_msg(LOG_SEV_ERR, "Invalid IPv6 multicast output "
+			"interface.\n");
 		break;
 	case OE_INET6_DST_ADDR:
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 destination address.\n");
@@ -1651,8 +1650,8 @@ void log_opt_error(enum OPT_ERR option_err,
 		log_msg(LOG_SEV_ERR, "Invalid IPv6 transmit hop-count.\n");
 		break;
 	case OE_MEMORY_ERROR:
-		log_msg(LOG_SEV_ERR, "Fatal memory error during option ");
-		log_msg(LOG_SEV_ERR, "parsing.\n");
+		log_msg(LOG_SEV_ERR, "Fatal memory error during option "
+			"parsing.\n");
 		break;
 	case OE_UNKNOWN_ERROR:
 		log_msg(LOG_SEV_ERR, "Unknown option error.\n");
@@ -1729,8 +1728,8 @@ void inet_to_inet_rcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms->dests);
+			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf,
+				rx_pkt_len, tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
@@ -1770,8 +1769,8 @@ void inet_to_inet6_rcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms->dests);
+			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd,
+				pkt_buf, rx_pkt_len, tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
@@ -1821,10 +1820,11 @@ void inet_to_inet_inet6_rcast(int *inet_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet_in_pkts++;
-			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms->dests);
+			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd,
+				pkt_buf, rx_pkt_len, inet_tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
-			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd,
+				pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
@@ -1865,8 +1865,8 @@ void inet6_to_inet6_rcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms->dests);
+			txed_pkts = inet6_tx_rcast(*inet6_out_sock_fd,
+				pkt_buf, rx_pkt_len, tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_pkts;
 		}
 	}
@@ -1906,8 +1906,8 @@ void inet6_to_inet_rcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				tx_sock_parms->dests);
+			txed_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf,
+				rx_pkt_len, tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_pkts;
 		}
 	}
@@ -1954,10 +1954,11 @@ void inet6_to_inet_inet6_rcast(int *inet6_in_sock_fd,
 							strerror(errno));
 		if (rx_pkt_len > 0) {
 			pkt_counters->inet6_in_pkts++;
-			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd, pkt_buf, rx_pkt_len,
-				inet_tx_sock_parms->dests);
+			txed_inet_pkts = inet_tx_rcast(*inet_out_sock_fd,
+				pkt_buf, rx_pkt_len, inet_tx_sock_parms->dests);
 			pkt_counters->inet_out_pkts += txed_inet_pkts;
-			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd, pkt_buf, rx_pkt_len,
+			txed_inet6_pkts = inet6_tx_rcast(*inet6_out_sock_fd,
+				pkt_buf, rx_pkt_len,
 				inet6_tx_sock_parms->dests);
 			pkt_counters->inet6_out_pkts += txed_inet6_pkts;
 		}
