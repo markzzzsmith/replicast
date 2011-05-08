@@ -550,13 +550,14 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "\te.g. -4out 224.0.0.36:1234,");
 	log_msg(LOG_SEV_INFO, "224.0.0.37:5678,192.168.1.1:9012\n");
 
-	log_msg(LOG_SEV_INFO, "-4mcttl <ttl> - outgoing multicast TTL\n");
+	log_msg(LOG_SEV_INFO, "-4mcttl <ttl> - outgoing multicast TTL. "
+		"default is 1.\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4mcttl 32\n");
 
-	log_msg(LOG_SEV_INFO, "-4mcloop - loop multicast to localhost\n");
+	log_msg(LOG_SEV_INFO, "-4mcloop - loop multicast to localhost.\n");
 
 	log_msg(LOG_SEV_INFO, "-4mcoutif <ifname> - multicast output "
-		"interface\n");
+		"interface.\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -4mcoutif eth0\n");
 
 	log_msg(LOG_SEV_INFO, "-6out <\\[addr\\]>:<port>,<\\[addr\\]>:<port>,"
@@ -565,13 +566,13 @@ void log_prog_help(void)
 	log_msg(LOG_SEV_INFO, "[ff05::37]:5678,[2001:db8::1]:9012\n");
 
 	log_msg(LOG_SEV_INFO, "-6mchops <hop count> - outgoing multicast"
-		" hops\n");
+		" hops. default is 1.\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6mchops 16\n");
 
-	log_msg(LOG_SEV_INFO, "-6mcloop - loop multicast to localhost\n");
+	log_msg(LOG_SEV_INFO, "-6mcloop - loop multicast to localhost.\n");
 
 	log_msg(LOG_SEV_INFO, "-6mcoutif <ifname> - multicast output"
-		" interface\n");
+		" interface.\n");
 	log_msg(LOG_SEV_INFO, "\te.g. -6mcoutif eth0\n");
 
 	log_msg(LOG_SEV_INFO, "\nsignals:\n");
