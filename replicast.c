@@ -522,7 +522,7 @@ void log_prog_help(void)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to "
+	log_msg(LOG_SEV_INFO, "\nReplicate IPv4 or IPv6 UDP datagrams to "
 		"IPv4 and/or IPv6 destinations.\n");
 
 	log_msg(LOG_SEV_INFO, "\ncommand line options:\n");
@@ -592,7 +592,7 @@ void log_prog_license(void)
 
 	log_debug_med("%s() entry\n", __func__);
 
-	log_msg(LOG_SEV_INFO, "\nreplicate IPv4 or IPv6 UDP datagrams to "
+	log_msg(LOG_SEV_INFO, "\nReplicate IPv4 or IPv6 UDP datagrams to "
 		"IPv4 and/or IPv6 destinations.\n");
 
 	log_msg(LOG_SEV_INFO, "\n");
