@@ -30,3 +30,9 @@ CC - c compiler to use
 CFLAGS_DEBUG - debugging flags to pass to the compiler or libraries
 
 CFLAGS - compiler flags, which automatically includes the CFLAGS_DEBUG variable
+
+
+Compilation Cleanup
+~~~~~~~~~~~~~~~~~~~
+
+$ make clean
