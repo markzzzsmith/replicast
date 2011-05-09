@@ -1,0 +1,32 @@
+The current replicast build system is almost as simple as it can be - it's just
+a Makefile. An autoconf build system is on the TODO list.
+
+Replicast is likely to be very portable, although it currently has only been
+compiled and run under Linux. The only non-POSIX routine I'm aware if in it
+is getopt_long(), which exists under Mac OS X, so it is likely to complile
+out of the box on that.
+
+While developing it I used both gcc and clang with the -Wall flag, so I think
+there should be very few errors or warnings if other C compilers are used.
+
+
+Build
+~~~~~
+
+$ make
+
+Install
+~~~~~~~
+
+$ cp replicast <destination>
+$ chmod 755 <destination>/replicast
+
+
+Makefile Variables
+~~~~~~~~~~~~~~~~~~
+
+CC - c compiler to use
+
+CFLAGS_DEBUG - debugging flags to pass to the compiler or libraries
+
+CFLAGS - compiler flags, which automatically includes the CFLAGS_DEBUG variable
