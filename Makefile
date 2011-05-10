@@ -1,10 +1,10 @@
 #CC = clang
-CC =gcc
+CC = gcc
  
 #CFLAGS_DEBUG = -DLIBLOG_DEBUG_ALL
 CFLAGS_DEBUG =
 
-CFLAGS = -Os -Wall $(CFLAGS_DEBUG)
+CFLAGS = -O3 -Wall $(CFLAGS_DEBUG)
 
 replicast : log inetaddr stringz replicast.c
 	$(CC) $(CFLAGS) replicast.c -o replicast log.o inetaddr.o stringz.o

@@ -230,21 +230,16 @@ void log_prog_banner(void);
 
 void log_prog_parms(const struct program_parameters *prog_parms);
 
-void log_inet_rx_sock_parms(const struct inet_rx_sock_params
-								*inet_rx_parms);
+void log_inet_rx_sock_parms(const struct inet_rx_sock_params *inet_rx_parms);
 
-void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
-							*inet6_rx_parms);
+void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params *inet6_rx_parms);
 
-void log_inet_tx_sock_parms(const struct inet_tx_sock_params
-							*inet_tx_parms);
+void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms);
 
-void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
-							*inet6_tx_parms);
+void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params *inet6_tx_parms);
 
 void log_opt_error(enum OPT_ERR option_err,
 		   const char *err_str_parm);
-
 
 void cleanup_prog_parms(struct program_parameters *prog_parms);
 
@@ -1479,8 +1474,7 @@ void log_inet_rx_sock_parms(const struct inet_rx_sock_params *inet_rx_parms)
 }
 
 
-void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params
-							*inet6_rx_parms)
+void log_inet6_rx_sock_parms(const struct inet6_rx_sock_params *inet6_rx_parms)
 {
 	char aip_str[AIP_STR_INET6_MAX_LEN + 1];
 	const unsigned int aip_str_size = AIP_STR_INET6_MAX_LEN + 1;
@@ -1547,8 +1541,7 @@ void log_inet_tx_sock_parms(const struct inet_tx_sock_params *inet_tx_parms)
 }
 
 
-void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params
-								*inet6_tx_parms)
+void log_inet6_tx_sock_parms(const struct inet6_tx_sock_params *inet6_tx_parms)
 {
 	char ap_str[1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1];
 	const unsigned int ap_str_size = 1 + INET6_ADDRSTRLEN + 1 + 1 + 5 + 1;
