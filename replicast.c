@@ -2336,7 +2336,7 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 {
 	int ret;
 	int sock_fd;
-	int one = 1;
+	const int one = 1;
 	struct sockaddr_in6 sa_in6_rxaddr;
 	struct ipv6_mreq ipv6_mcast_req;
 
@@ -2355,6 +2355,16 @@ int open_inet6_rx_sock(const struct inet6_rx_sock_params *sock_parms)
 		sizeof(one));
 	if (ret == -1) {
 		log_debug_low("%s(): setsockopt(SO_REUSEADDR) == %d\n",
+			__func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
+		return -1;
+	}
+
+	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, &one,
+		sizeof(one));
+	if (ret == -1) {
+		log_debug_low("%s(): setsockopt(IPV6_V6ONLY) == %d\n",
 			__func__, ret);
 		log_debug_low("%s(): errno == %d\n", __func__, errno);
 		log_debug_med("%s() exit\n", __func__);
@@ -2490,6 +2500,7 @@ int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms)
 {
 	int sock_fd;
 	int ret;
+	const int one = 1;
 	int32_t hops;
 	uint32_t loop;
 	uint32_t out_ifidx;
@@ -2499,6 +2510,16 @@ int open_inet6_tx_sock(const struct inet6_tx_sock_params *sock_parms)
 
 	sock_fd = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (sock_fd == -1) {
+		return -1;
+	}
+
+	ret = setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, &one,
+		sizeof(one));
+	if (ret == -1) {
+		log_debug_low("%s(): setsockopt(IPV6_V6ONLY) == %d\n",
+			__func__, ret);
+		log_debug_low("%s(): errno == %d\n", __func__, errno);
+		log_debug_med("%s() exit\n", __func__);
 		return -1;
 	}
 
