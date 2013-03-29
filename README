@@ -115,7 +115,7 @@ There will already be some default multicast routes created by the kernel for
 ff00::/8.
 
 The following command will add a multicast route for all site-local multicast
-addresses :
+addresses, using the eth0 interface :
 
 ip -6 route add ff05::/16 dev eth0 table local
 
@@ -177,20 +177,103 @@ ip6tables -A INPUT -d ff02::1234 -j ACCEPT
 4.5.1. Multicast IPv6 Streaming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+4.5.1.1. Sending IPv6 Multicast Streams
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+4.5.1.1.1. Common
+~~~~~~~~~~~~~~~~~
+
+4.5.1.1.2. GUI Specific
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Stream -> select file -> UDP Legacy destination -> [fe80::221:70ff:fefb:59a1%wlan0]
+	- Link-local destination with egress interface name didn't work
+
+Stream -> select file -> UDP Legacy destination -> [ULA addr]
+	- ULA destination didn't work
+	- prefixing address with @ symbol didn't work
+
+Stream -> select file -> UDP Legacy destination -> [GUA addr]
+	- GUA destination didn't work
+	- prefixing address with @ symbol didn't work
+
+Stream -> select file -> UDP Legacy destination -> [Site local multicast addr]
+	- Site local multicast address didn't work, with static multicast route
+	- prefixing address with @ symbol didn't work
+
+Basically seems that IPv6 address entry in GUI doesn't work at all.
+
+4.5.1.1.3. CLI Specific
+~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Multicast, using multicast route to distinguish egress interface
+
+ip -6 route add ff05::/16 dev wlan0 table local
+vlc -vvv Movie.mp4 --sout udp://\[ff05::1234\]:1234
+
+Multicast, using interface specifier to distingish egress interface
+
+vlc -vvv Le\ Mans.mp4 --sout udp://\[ff05::1234%wlan0]:1234
+*** does not work, so must use static multicast route to distinguish egress interface ***
+
+
+Unicast link-local destination, specifying egress interface
+vlc -vvv Movie.mp4 --sout udp://\[fe80::221:70ff:fefb:59a1%wlan0]:1234
+
+
+
+4.5.1.2. Receiving IPv6 Multicast Streams
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+4.5.1.2.1. Common
+~~~~~~~~~~~~~~~~~
+
+Multicast, using multicast route to distinguish ingress interface
+
+ip -6 route add ff05::/16 dev eth0 table local
+
+
+Need to allow ingress traffic through firewall i.e. ip6tables. Can be as simple as allowing traffic with a multicast destination address e.g.,
+
+ip6tables -A INPUT -d ff00::/8 -j ACCEPT
+
+although more specific might be better e.g. hop count value checking, link-local source address if the multicast source is on the same link, etc.
+
+
+4.5.1.2.2. GUI Specific
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Open Stream -> udp://@[::]:1234
+
+	- *** @ symbol disappears when URL is shown at top of VLC window ***
+	- IPv6 unicast wildcard, includes link-local addresses
+
+Open Stream -> udp://@[ff05::1234]:1234
+	- *** @ symbol disappears when URL is shown at top of VLC window ***
+	- Uses IPv6 multicast route to identify ingress interface
+
+4.5.1.2.3. CLI Specific
+~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
 For non-link local multicast destinations -
 
 Then specify destination multicast address in VLC output URL, escaping square breackets
 
 e.g.
 
-vlc -vvv v\ for\ vendetta.mp4 --ipv6 --sout udp://\[ff01::15\]
+vlc -vvv v\ for\ vendetta.mp4 --sout udp://\[ff02::15\]
 
 
-For link-local multicast destination, you specify the output interface, and don't need a multicast route in the local table
+For link-local multicast destination, you can specify the output interface, and don't need a multicast route in the local table
 
 e.g.
 
-vlc -vvv v\ for\ vendetta.mp4 --ipv6 --sout udp://\[ff02::32%eth0\]
+vlc -vvv v\ for\ vendetta.mp4 --sout udp://\[ff02::32%eth0\]
 
 Don't seem to be able to use loopback interface in this scenario
 
